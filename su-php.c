@@ -113,7 +113,7 @@ void
 assert_secure_location (char *path, uid_t uid, gid_t gid)
 {
 	struct stat fs;
-	char *ptr = malloc(strlen(path));
+	char *ptr = malloc(strlen(path) + 1);
 	char *p = NULL;
 	strcpy(ptr, path);
 	p = ptr;
@@ -239,7 +239,7 @@ main ()
 	prog_uid = getuid();
 	pwd = getpwuid(prog_uid);
 	if (!pwd)
-		panic(71, "UID %s: no such user.", prog_uid);
+		panic(71, "UID %d: no such user.", prog_uid);
 	if (strcmp(pwd->pw_name, WWW_USER) != 0)
 		panic(77, "can only be called by user %s.", WWW_USER);
 
@@ -247,7 +247,7 @@ main ()
 	prog_gid = getgid();
 	grp = getgrgid(prog_gid);
 	if (!grp)
-		panic(71, "GID %s: no such group.", prog_gid);
+		panic(71, "GID %d: no such group.", prog_gid);
 	if (strcmp(grp->gr_name, WWW_GROUP) != 0)
 		panic(77, "can only be called by group %s.", WWW_GROUP);
 
@@ -346,7 +346,7 @@ main ()
 	int base_len = strlen(BASE_DIR);
 	char *restrict base_dir = realpath(BASE_DIR, NULL);
 	if (!base_dir)
-		panic(69, "failed to canonicalise %s: %s.", strerror(errno));
+		panic(69, "failed to canonicalise %s: %s.", BASE_DIR, strerror(errno));
 	if (strcmp(BASE_DIR, base_dir) != 0)
 		panic(69, "%s: not a canonical path.", BASE_DIR);
 	if (strlen(base_dir) == PATH_MAX)
