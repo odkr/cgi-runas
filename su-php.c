@@ -164,7 +164,7 @@ starts_with (char *str, char *sub)
  */
 
 int
-main (int argc, char *const argv[])
+main ()
 {
 	/*
 	 * Prelude
@@ -393,6 +393,6 @@ main (int argc, char *const argv[])
 	 * --------
 	 */
 
-	char *const a[] = { PHP, NULL };
-	execve(PHP, a, environ);
+	char *const argv[] = { PHP, NULL };
+	execve(PHP, argv, environ);
 }
