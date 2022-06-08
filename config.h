@@ -11,7 +11,7 @@ const gid_t MIN_GID = 1000;
 const char PATH[] = "/usr/bin:/bin";
 
 // The absolute path of the CGI handler to run PHP scripts with.
-const char PHP[] = "/usr/lib/cgi-bin/php";
+const char PHP_CGI[] = "/usr/lib/cgi-bin/php";
 
 // A list of safe environment variables.
 // Must be terminated with a `NULL`.
