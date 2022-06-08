@@ -393,6 +393,6 @@ main ()
 	 * --------
 	 */
 
-	char *const argv[] = { PHP, NULL };
-	execve(PHP, argv, environ);
+	char *const argv[] = { PHP_CGI, NULL };
+	execve(PHP_CGI, argv, environ);
 }
