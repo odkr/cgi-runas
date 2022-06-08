@@ -140,8 +140,8 @@ assert_secure_location (char *path, uid_t uid, gid_t gid)
  *     sub - A substring.
  *
  * Returns:
- *     0        - The string starts with the given substring.
- *     Non-zero - Otherwise.
+ *     1 - The string starts with the given substring.
+ *     0 - Otherwise.
  */
 int
 starts_with (char *str, char *sub)
@@ -153,7 +153,8 @@ starts_with (char *str, char *sub)
 	tmp[len] = '\0';
 	ret = strcmp(tmp, sub);
 	free(tmp);
-	return ret;
+	if (ret == 0) return 1;
+	return 0;
 }
 
 
@@ -351,7 +352,7 @@ main (int argc, char *const argv[])
 	if (strlen(base_dir) == PATH_MAX)
 		panic(69, "path of base directory is too long.");
 	strcat(base_dir, "/");
-	if (starts_with(path, base_dir) != 0)
+	if (!starts_with(path, base_dir))
 		panic(69, "%s is not in %s.", path, BASE_DIR);
 	free(base_dir); base_dir = NULL;
 
@@ -369,7 +370,7 @@ main (int argc, char *const argv[])
 		char *pair = environ[i];
 		int safe = 0;
 		for (j = 0; ENV_VARS[j]; j++) {
-			if (starts_with(pair, ENV_VARS[j]) == 0) {
+			if (starts_with(pair, ENV_VARS[j])) {
 				safe = 1;
 				break;
 			}
