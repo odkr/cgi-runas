@@ -33,7 +33,7 @@
 #include <unistd.h>
 
 // The configuration.
-#include <config.h>
+#include "config.h"
 
 // Needed to find the executable.
 #define PROC_SELF_EXE "/proc/self/exe"
@@ -343,7 +343,6 @@ main ()
 	 * --------------------------------------------
 	 */
 
-	int base_len = strlen(BASE_DIR);
 	char *restrict base_dir = realpath(BASE_DIR, NULL);
 	if (!base_dir)
 		panic(69, "failed to canonicalise %s: %s.", BASE_DIR, strerror(errno));
