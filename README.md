@@ -1,6 +1,7 @@
 # su-php
 
-A *dumb* wrapper that runs PHP scripts as their owner.
+A wrapper that runs PHP scripts under the UID and GID of their owner.
+
 
 ## Requirements
 
@@ -16,16 +17,16 @@ A *dumb* wrapper that runs PHP scripts as their owner.
    filesystem mounted on `/proc`.
 
 *su-php* has only been tested on Debian GNU/Linux.
-Other POSIX-compliant operating systems may or may not work.
 
 You also need [PHP](https://php.net/), of course.
+And you need to run it via the CGI for *su-php* to work.
 
 
 ## Security
 
 **WARNING:**
 *su-php* is in need of real-world testing and a second pair of eyes to audit it.
-You do *not* want to use it just yet.
+**You do *not* want to use it.**
 
 *su-php* performs the following checks to determine whether it should run a PHP script:
 
@@ -58,6 +59,7 @@ Unless all of the above conditions are met, *su-php* aborts.
 ## Installation 
 
 You use *su-php* at your own risk!
+And that risk is considerable!
 
 ----
 
@@ -81,7 +83,7 @@ You need to adapt `config.h` before compiling:
 
 ```sh
 cd su-php-0.0.0
-${VISUAL-${EDITOR-vi}} config.h
+"${VISUAL-${EDITOR-vi}}" config.h
 ```
 
 
@@ -93,42 +95,42 @@ Once you are done, compile *su-php* by:
 make
 ```
 
-There should now be an executable `su-php` in the top-level directory of the repository:
+There should now be an executable `su-php` in the repository's top-level directory:
 
-> $ ls su-php
-> su-php
+```sh
+$ ls su-php
+su-php
+```
 
 
 ----
 
-*su-php* refuses to do anythig if:
 
-1. its user ID is not 0 and its group ID is not that of your web server,
-2. it is group-writeable, world-writable, or world-executable.
-
-So change its ownership and permissions accordingly by:
+Change *su-php*'s owner and permissions by:
 
 ```sh
 chown root:www-data su-php
-chmod u=rws,g=rx,o= su-php
+chmod u=rws,g=x,o= su-php
 ```
 
-If your web server does not run under the group 'www-data', you need to adatop the command above accordingly.
+If your web server does not run under the group 'www-data', you need to adopt the command above accordingly.
 
 
 ----
 
-Move `su-php` into your `cgi-bin` directory (e.g., `/usr/lib/cgi-bin`).
+Move `su-php` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
 
 ```sh
 mv su-php /usr/lib/cgi-bin
 ```
 
-If your `cgi-bin` directory is not `/usr/lib/cgi-bin`, you need to adatop the command above accordingly.
+If your directory for CGI binaries is not `/usr/lib/cgi-bin`, you need to adopt the command above accordingly.
 
 ----
 
-Tell your webserver to run PHP scripts via `su-php`. If you are using [Apache](https://www.apache.org) v2, look for
+Tell your webserver to run PHP scripts via *su-php*.
+
+If you are using [Apache](https://www.apache.org) v2, look for
 
 > Action application/x-httpd-php /cgi-bin/php
 
@@ -142,7 +144,7 @@ You need to run PHP via CGI for *su-php* to work.
 ## Documentation
 
 See the [source code](su-php.c) and the [configuration file](config.h) for more details.
-It's short and simple, I promise.
+It's short and straightforward, I promise.
 
 
 ## Contact
