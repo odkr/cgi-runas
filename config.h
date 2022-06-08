@@ -1,29 +1,30 @@
 // PHP scripts outside of this directory are rejected.
-// Must *not* end with a '/'.
-const char BASE_DIR[] = "/home";
+const char BASE_DIR[] = "/home/";
 
-// PHP scripts owned by users with a UID lower than this UID are rejected.
+// PHP scripts owned by users with a UID lower than this one are rejected.
 const uid_t MIN_UID = 1000;
 
-// PHP scripts owned by groups with a GID lower than this GID are rejected.
+// PHP scripts owned by groups with a GID lower than this one are rejected.
 const gid_t MIN_GID = 1000;
 
-// A safe PATH.
+// What to set the `PATH` environment variable to.
 const char PATH[] = "/usr/bin:/bin";
 
 // The absolute path of the CGI handler to run PHP scripts with.
-const char PHP_CGI[] = "/usr/lib/cgi-bin/php";
+const char PHP[] = "/usr/lib/cgi-bin/php";
 
 // A list of safe environment variables.
 // Must be terminated with a `NULL`.
 // Copied from Apache's suExec.
-const char *const SAFE_ENV_VARS[] =
+const char *const ENV_VARS[] =
 {
-	/* Variable name starts with */
+	// If you do not terminate variable names with a "=",
+	// they match the begining of the variable name.
 	"HTTP_",
 	"SSL_",
 
-	/* Variable name is */
+	// If you terminate variable names with a "=",
+	// they match the whole variable name.
 	"AUTH_TYPE=",
 	"CONTENT_LENGTH=",
 	"CONTENT_TYPE=",
@@ -72,7 +73,7 @@ const char *const SAFE_ENV_VARS[] =
 	"USER_NAME=",
 	"TZ=",
 
-	// Terminator. Do *not* remove.
+	// Terminator. DO *NOT* REMOVE!
 	NULL
 };
 
