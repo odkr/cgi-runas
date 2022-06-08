@@ -379,7 +379,7 @@ main ()
 			char *name = strtok(pair, "=");
 			if (!name)
 				panic(69, "%s: failed to parse.", pair);
-			if(unsetenv(name) != 0)
+			if (unsetenv(name) != 0)
 				panic(69, "failed to unset %s: %s.", name, strerror(errno));
 		}
 	}
