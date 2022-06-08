@@ -1,4 +1,5 @@
-/* PROGRAMME: su-php
+/*
+ * PROGRAMME: su-php
  *
  * Run PHP scripts under the UID and GID of their owner.
  *
