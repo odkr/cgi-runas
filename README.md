@@ -35,22 +35,23 @@ And you need to run PHP via the CGI in order for *su-php* to work.
 2. Is the executable owned by UID 0 and `WWW_GROUP`?
 3. Is the executable *not* group-writable, world-writable, or world-executable?
 4. Is the directory the executable is located in, and each of its ancestors,
-   owned by root or the webserver and *not* world-writable?
+   owned by root and neither group- nor world-writable?
 5. Is the executable run as `WWW_USER` and `WWW_GROUP`?
 6. Is the environment variable `PATH_TRANSLATED` set to a non-empty value?
-7. Is the UID of the script's owner not 0 and greater than `MIN_UID`?
-8. Is the GID of the script's owner not 0 and greater than `MIN_GID`?
-9. Do the UID and GID of the script reference a user and a group known to the system?
-10. Can the executable drop all suplemantary groups,
+7. Does the value of `PATH_TRANSLATED` represent an absolute path?
+8. Is the UID of the script's owner not 0 and greater than `MIN_UID`?
+9. Is the GID of the script's owner not 0 and greater than `MIN_GID`?
+10. Do the UID and GID of the script reference a user and a group known to the system?
+11. Can the executable drop all suplemantary groups,
     set its effective GID to the GID of the script's owner, and
 	its effective UID to the UID of the script's owner?
-11. After doing that, does resetting its effective UID to 0 fail?
-12. Does the value of `PATH_TRANSLATED` end in '.php'?
-13. Is the script located inside `BASE_DIR`?
-14. Is the directory the script is located in, and each of its ancestors,
+12. After doing that, does resetting its effective UID to 0 fail?
+13. Does the value of `PATH_TRANSLATED` end in '.php'?
+14. Is the script located inside `BASE_DIR`?
+15. Is the directory the script is located in, and each of its ancestors,
     owned by root or the user the script should be run as and *not* world-writable?
-15. Can environment variables not listed in `ENV_VARS` be unset?
-16. Can the environment variable `PATH` be set to the configuration value `PATH`?
+16. Can environment variables not listed in `ENV_VARS` be unset?
+17. Can the environment variable `PATH` be set to the configuration value `PATH`?
 
 Unless all of the above conditions are met, *su-php* aborts.
 
@@ -78,7 +79,7 @@ and unpack it:
 
 *su-php* is configured at compile-time. Don't worry, it compiles in < 1s.
 
-You need to adapt `config.h` before compiling:
+Adapt `config.h`:
 
 ```sh
 cd su-php-0.0.0
@@ -106,14 +107,14 @@ su-php
 ----
 
 
-Change *su-php*'s owner and permissions by:
+Change `su-php`'s owner and permissions by:
 
 ```sh
 chown root:www-data su-php
 chmod u=rws,g=x,o= su-php
 ```
 
-If your web server does not run under the group 'www-data', you need to adopt the command above accordingly.
+If your web server does not run under the group 'www-data', you need to adapt the command above accordingly.
 
 
 ----
@@ -124,7 +125,7 @@ Move `su-php` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
 mv su-php /usr/lib/cgi-bin
 ```
 
-If your directory for CGI binaries is not `/usr/lib/cgi-bin`, you need to adopt the command above accordingly.
+If your directory for CGI binaries is not `/usr/lib/cgi-bin`, you need to adapt the command above accordingly.
 
 ----
 
