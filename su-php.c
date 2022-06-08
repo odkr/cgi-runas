@@ -180,7 +180,7 @@ main ()
 
 	// PATH_MAX does not do what it should be doing, but what is the alternative?
 	// See <https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html>.
-	// The '+ 1' should be superflous, but better be save than sorry.
+	// The '+ 1' should be superfluous, but better be save than sorry.
 
 	PROG_PATH = malloc(PATH_MAX + 1);
 	ssize_t bytes = readlink(PROC_SELF_EXE, PROG_PATH, PATH_MAX);
@@ -188,7 +188,7 @@ main ()
 		panic(71, "readlink %s: %s.", PROC_SELF_EXE, strerror(errno));
 	else if (bytes == 0)
 		panic(71, "link %s resolves to nothing.", PROC_SELF_EXE);
-	else if (bytes == PATH_MAX)
+	else if (bytes >= PATH_MAX)
 		panic(69, "link %s resolves to overly long path.", PROC_SELF_EXE);
 	PROG_NAME = basename(PROG_PATH);
 
@@ -273,7 +273,7 @@ main ()
 	path = realpath(trans, NULL);
 	if (!path)
 		panic(69, "failed to canonicalise %s: %s.", trans, strerror(errno));
-	if (strlen(path) == PATH_MAX)
+	if (strlen(path) >= PATH_MAX)
 		panic(69, "PATH_TRANSLATED is too long.");
 
 
@@ -348,7 +348,7 @@ main ()
 		panic(69, "failed to canonicalise %s: %s.", BASE_DIR, strerror(errno));
 	if (strcmp(BASE_DIR, base_dir) != 0)
 		panic(69, "%s: not a canonical path.", BASE_DIR);
-	if (strlen(base_dir) == PATH_MAX)
+	if (strlen(base_dir) >= PATH_MAX)
 		panic(69, "path of base directory is too long.");
 	strcat(base_dir, "/");
 	if (!starts_with(path, base_dir))
