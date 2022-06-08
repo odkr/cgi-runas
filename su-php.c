@@ -99,38 +99,6 @@ panic (const int status, const char *message, ...)
 	exit(status);
 }
 
-/* Function: assert_secure_location
- *
- * Abort the programme with status 69 and an error message
- * if a file, or one of its parent directories, can be modified by
- * somebody other than root and a given user.
- *
- * Arguments:
- *     path - The file's path.
- *     uid  - The user's UID.
- *     gid  - The GID of that user's primary group.
- */
-void
-assert_secure_location (char *path, uid_t uid, gid_t gid)
-{
-	struct stat fs;
-	char *ptr = malloc(strlen(path) + 1);
-	char *p = NULL;
-	strcpy(ptr, path);
-	p = ptr;
-	do {
-		if (stat(p, &fs) != 0)
-			panic(69, "%s: %s.", p, strerror(errno));
-		if (fs.st_uid != 0 && fs.st_uid != uid)
-			panic(69, "%s's UID is insecure.", p);
-		if (fs.st_gid != 0 && fs.st_gid != gid)
-			panic(69, "%s's GID is insecure.", p);
-		if (fs.st_mode & S_IWOTH)
-			panic(69, "%s is world-writable.", p);
-		p = dirname(p);
-	} while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
-	free(ptr);
-}
 
 /* Function: starts_with
  *
@@ -147,14 +115,14 @@ assert_secure_location (char *path, uid_t uid, gid_t gid)
 int
 starts_with (char *str, char *sub)
 {
-	int ret = -1;
+	int eq = -1;
 	int len = strlen(sub);
 	char *tmp = malloc(len + 1);
 	strncpy(tmp, str, len);
 	tmp[len] = '\0';
-	ret = strcmp(tmp, sub);
+	eq = strcmp(tmp, sub);
 	free(tmp);
-	if (ret == 0) return 1;
+	if (eq == 0) return 1;
 	return 0;
 }
 
@@ -228,7 +196,22 @@ main ()
 	if (fs.st_mode & S_IXOTH)
 		panic(69, "%s is world-executable.", PROG_PATH);
 
-	assert_secure_location(PROG_PATH, 0, grp->gr_gid);
+	char *ptr = malloc(strlen(PROG_PATH) + 1);
+	char *p = NULL;
+	strcpy(ptr, PROG_PATH);
+	p = ptr;
+	do {
+		if (stat(p, &fs) != 0)
+			panic(69, "%s: %s.", p, strerror(errno));
+		if (fs.st_uid != 0)
+			panic(69, "%s's UID is insecure.", p);
+		if (fs.st_mode & S_IWGRP)
+			panic(69, "%s is group-writable.", p);
+		if (fs.st_mode & S_IWOTH)
+			panic(69, "%s is world-writable.", p);
+		p = dirname(p);
+	} while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
+	free(ptr); ptr = NULL;
 
 
 	/*
@@ -356,7 +339,21 @@ main ()
 		panic(69, "%s is not in %s.", path, BASE_DIR);
 	free(base_dir); base_dir = NULL;
 
-	assert_secure_location(path, uid, gid);
+	ptr = malloc(strlen(path) + 1);
+	strcpy(ptr, path);
+	p = ptr;
+	do {
+		if (stat(p, &fs) != 0)
+			panic(69, "%s: %s.", p, strerror(errno));
+		if (fs.st_uid != 0 && fs.st_uid != uid)
+			panic(69, "%s's UID is insecure.", p);
+		if (fs.st_gid != 0 && fs.st_gid != gid)
+			panic(69, "%s's GID is insecure.", p);
+		if (fs.st_mode & S_IWOTH)
+			panic(69, "%s is world-writable.", p);
+		p = dirname(p);
+	} while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
+	free(ptr); ptr = NULL;
 	free(path); path = NULL;
 
 
