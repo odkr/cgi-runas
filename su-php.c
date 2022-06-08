@@ -99,7 +99,7 @@ main (int argc, char *const argv[])
 	errno = 0;
 
 	// Get the path of the executable.
-	char *PROG_PATH = malloc(PATH_MAX + 1);
+	PROG_PATH = malloc(PATH_MAX + 1);
 	ssize_t b = readlink(SELF, PROG_PATH, PATH_MAX);
 	if      (b < -1)
 		panic(71, "failed to resolve %s.", SELF);
@@ -137,7 +137,7 @@ main (int argc, char *const argv[])
 
 	assert_secure_path(PROG_PATH, 0, grp->gr_gid);
 
-	// Check if the programme is run by the web server.
+	// Check if the programme is run by the webserver.
 	uid_t prog_uid;
 	prog_uid = getuid();
 	pwd = getpwuid(prog_uid);
@@ -163,11 +163,10 @@ main (int argc, char *const argv[])
 	if (trans[0] != '/')
 		panic(64, "%s is not an absolute path.", trans);
 	
-	char *path = NULL;
+	char *restrict path = NULL;
 	path = realpath(trans, NULL);
 	if (!path)
 		panic(69, "failed to canonicalise %s: %s.", trans, strerror(errno));
-	free(trans); trans = NULL;
 
 	// Check if the script's UID and GID are sound.
 	if (stat(path, &fs) != 0)
@@ -228,16 +227,16 @@ main (int argc, char *const argv[])
 	free(path); path = NULL;
 
 	// Clean up the environment.
-	int i = 0;
-	int j = 0;
+	int i, j;
 	for (i = 0; environ[i]; i++) {
 		char *pair = environ[i];
 		int safe = 0;
 		for (j = 0; SAFE_ENV_VARS[j]; j++) {
 			char *pattern = SAFE_ENV_VARS[j];
 			int len = strlen(pattern);
-			char *prefix = malloc(len + 1);
+			prefix = malloc(len + 1);
 			strncpy(prefix, pair, len);
+			prefix[len] = '\0';
 			if (strcmp(prefix, pattern) == 0) {
 				safe = 1;
 				break;
@@ -255,8 +254,6 @@ main (int argc, char *const argv[])
 
 	if (setenv("PATH", PATH, 1) != 0)
 		panic(69, "failed to set PATH: %s.", strerror(errno));
-
-
 
 	// Call the actual CGI handler.
 	char *const a[] = { PHP_CGI, NULL };
