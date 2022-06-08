@@ -1,5 +1,5 @@
 // PHP scripts outside of this directory are rejected.
-const char BASE_DIR[] = "/home/";
+const char BASE_DIR[] = "/home";
 
 // PHP scripts owned by users with a UID lower than this one are rejected.
 const uid_t MIN_UID = 1000;
