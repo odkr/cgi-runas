@@ -32,7 +32,7 @@
 
 #include <config.h>
 
-#define SELF "/proc/self/exe"
+#define PROC_SELF_EXE "/proc/self/exe"
 
 
 // GLOBALS
@@ -95,23 +95,35 @@ assert_secure_path (char *path, uid_t uid, gid_t gid)
 int
 main (int argc, char *const argv[])
 {
-	// Prelude.
+	/* Prelude.
+	 * -------- */
 	errno = 0;
 
-	// Get the path of the executable.
+
+	/* Get path and name of executable.
+	 * -------------------------------- */
+
+	// PATH_MAX does not do what it should be doing, but what is the alternative?
+	// See <https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html>.
+	// The '+ 1' should be superflous, but better be save than sorry.
+
 	PROG_PATH = malloc(PATH_MAX + 1);
-	ssize_t b = readlink(SELF, PROG_PATH, PATH_MAX);
-	if      (b < -1)
-		panic(71, "failed to resolve %s.", SELF);
-	else if (b == -1)
-		panic(71, "readlink %s: %s.", SELF, strerror(errno));
-	else if (b == 0)
-		panic(71, "link %s resolves to nothing.", SELF);
-	else if (b == PATH_MAX)
-		panic(69, "link %s resolves to overly long path.", SELF);
+	ssize_t bytes = readlink(PROC_SELF_EXE, PROG_PATH, PATH_MAX);
+	if      (bytes < 0)
+		panic(71, "readlink %s: %s.", PROC_SELF_EXE, strerror(errno));
+	else if (bytes == 0)
+		panic(71, "link %s resolves to nothing.", PROC_SELF_EXE);
+	else if (bytes == PATH_MAX)
+		panic(69, "link %s resolves to overly long path.", PROC_SELF_EXE);
 	PROG_NAME = basename(PROG_PATH);
 
-	// Check if the executable is secure.
+
+	/* Check if executable is secure.
+	 * ------------------------------ */
+
+	// If it were insecure, this checks wouldn't be run to begin with, of course.
+	// Their purpose is to force the user to secure their setup.
+	
 	struct stat fs;
 	struct group *grp;
 	struct passwd *pwd;
@@ -119,11 +131,14 @@ main (int argc, char *const argv[])
 	pwd = getpwnam(WWW_USER);
 	if (!pwd)
 		panic(67, "%s: no such user.", WWW_USER);
+
 	grp = getgrnam(WWW_GROUP);
 	if (!grp)
 		panic(67, "%s: no such group.", WWW_GROUP);
+
 	if (stat(PROG_PATH, &fs) != 0)
 		panic(69, "%s: %s.", PROG_PATH, strerror(errno));
+
 	if (fs.st_uid != 0)
 		panic(69, "%s's UID is not 0.", PROG_PATH);
 	if (fs.st_gid != grp->gr_gid)
@@ -137,7 +152,10 @@ main (int argc, char *const argv[])
 
 	assert_secure_path(PROG_PATH, 0, grp->gr_gid);
 
-	// Check if the programme is run by the webserver.
+
+	/* Check if programme is run by webserver.
+	 * --------------------------------------- */
+
 	uid_t prog_uid;
 	prog_uid = getuid();
 	pwd = getpwuid(prog_uid);
@@ -153,7 +171,13 @@ main (int argc, char *const argv[])
 	if (strcmp(grp->gr_name, WWW_GROUP) != 0)
 		panic(77, "can only be called by group %s.", WWW_GROUP);
 
-	// Get the script's path.
+
+	/* Get script's path.
+	 * ------------------ */
+
+	// This section depends on /proc.
+	// There is no other, reliable, way to find a process' executable.
+
 	char *trans = NULL;
 	trans = getenv("PATH_TRANSLATED");
 	if (trans == NULL)
@@ -168,7 +192,10 @@ main (int argc, char *const argv[])
 	if (!path)
 		panic(69, "failed to canonicalise %s: %s.", trans, strerror(errno));
 
-	// Check if the script's UID and GID are sound.
+
+	/* Check if script's UID and GID are sound.
+	 * ---------------------------------------- */
+
 	if (stat(path, &fs) != 0)
 		panic(69, "%s: %s.", path, strerror(errno));
 
@@ -191,7 +218,14 @@ main (int argc, char *const argv[])
 	uid_t uid = fs.st_uid;
 	gid_t gid = fs.st_gid;
 	
-	// Drop privileges.
+
+	/* Drop privileges.
+	 * ---------------- */
+	
+	// This section uses setgroups(), which is non-POSIX.
+	// I drop privileges earlier than suExec, because
+	// the fewer privileges, the better. Why wait?
+
 	const gid_t groups[] = {};
 	if (setgroups(0, groups) != 0)
 		panic(69, "failed to drop groups: %s.", strerror(errno));
@@ -202,7 +236,10 @@ main (int argc, char *const argv[])
 	if (setuid(0) != -1)
 		panic(69, "could regain privileges, aborting.");
 
-	// Check if we are dealing with a PHP script.
+
+	/* Check if PATH_TRANSLATED points to a PHP script.
+	 * ------------------------------------------------ */
+
 	char *suffix = NULL;
 	suffix = strrchr(path, '.');
 	if (!suffix)
@@ -210,7 +247,10 @@ main (int argc, char *const argv[])
 	if (strcmp(suffix, ".php") != 0)
 		panic(64, "%s is not a PHP script.", path);
 
-	// Check if the PHP script's path is sound.
+
+	/* Check if PATH_TRANSLATED points to a secure file.
+	 * ------------------------------------------------- */
+
 	int base_len = strlen(BASE_DIR) + 1;
 	char *base_dir = malloc(base_len);
 	strcpy(base_dir, BASE_DIR);
@@ -222,11 +262,13 @@ main (int argc, char *const argv[])
 	free(prefix); prefix = NULL;
 	free(base_dir); base_dir = NULL;
 
-	// Check if the PHP script can be modified by other users.
 	assert_secure_path(path, uid, gid);
 	free(path); path = NULL;
 
-	// Clean up the environment.
+
+	/* Clean up the environment.
+	 * ------------------------- */
+
 	int i, j;
 	for (i = 0; environ[i]; i++) {
 		char *pair = environ[i];
@@ -234,6 +276,7 @@ main (int argc, char *const argv[])
 		for (j = 0; SAFE_ENV_VARS[j]; j++) {
 			char *pattern = SAFE_ENV_VARS[j];
 			int len = strlen(pattern);
+			// prefix is defined above.
 			prefix = malloc(len + 1);
 			strncpy(prefix, pair, len);
 			prefix[len] = '\0';
@@ -246,7 +289,7 @@ main (int argc, char *const argv[])
 		if (safe != 1) {
 			char *name = strtok(pair, "=");
 			if (!name)
-				panic(69, "environment key-value pair: %s: failed to parse.", pair);
+				panic(69, "%s: failed to parse.", pair);
 			if(unsetenv(name) != 0)
 				panic(69, "failed to unset %s: %s.", name, strerror(errno));
 		}
@@ -255,7 +298,10 @@ main (int argc, char *const argv[])
 	if (setenv("PATH", PATH, 1) != 0)
 		panic(69, "failed to set PATH: %s.", strerror(errno));
 
-	// Call the actual CGI handler.
+
+	/* Call the actual CGI handler.
+	 * ---------------------------- */
+
 	char *const a[] = { PHP_CGI, NULL };
 	execve(PHP_CGI, a, environ);
 }
