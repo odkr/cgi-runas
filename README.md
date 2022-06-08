@@ -16,10 +16,11 @@ A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
    [proc](https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html)
    filesystem mounted on `/proc`.
 
-*su-php* has only been tested on Debian GNU/Linux.
+Most Linux distributions should meet those requirements.
+*su-php* has been tested on Debian GNU/Linux.
 
 You also need a webserver and [PHP](https://php.net/), of course.
-And you need to run it via the CGI for *su-php* to work.
+And you need to run PHP via the CGI in order for *su-php* to work.
 
 
 ## Security
