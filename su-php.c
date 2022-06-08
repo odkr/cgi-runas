@@ -1,5 +1,8 @@
-/*
+/* PROGRAMME: su-php
  *
+ * Run PHP scripts under the UID and GID of their owner.
+ *
+ * See <https://https://github.com/odkr/su-php> for details.
  *
  * Copyright 2022 Odin Kroeger
  *
@@ -15,7 +18,6 @@
  * program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
@@ -30,30 +32,60 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+// The configuration.
 #include <config.h>
 
+// Needed to find the executable.
 #define PROC_SELF_EXE "/proc/self/exe"
 
 
-// GLOBALS
-// =======
+/*
+ * GLOBALS
+ * =======
+ */
 
-// The environment.
+/* Global: environ
+ *
+ * The environemnt.
+ */
 extern char **environ;
 
-// The path to this script.
-// Set by `main`.
+/* Global: PROG_PATH
+ *
+ * The path to the programme's executable.
+ * Set by `main`.
+ */
 char *PROG_PATH = NULL;
 
-// The name of this programme.
-// Set by `main`.
+/* Global: PROG_NAME
+ *
+ * The filename of the programme's executable.
+ * Set by `main`.
+ */ 
 char *PROG_NAME = NULL;
 
 
-// FUNCTIONS
-// =========
+/*
+ * FUNCTIONS
+ * =========
+ */
 
-
+/* Function: panic
+ *
+ * Prints an error message to STDERR and exits the programme.
+ *
+ * Arguments:
+ * 
+ *    status  - Status to exit with.
+ *    message - Message to print.
+ *    ...     - Arguments for the message (think `printf`).
+ *
+ * Globals:
+ *
+ *    PROG_NAME - The filename of the executable.
+ *                If not `NULL`, `PROG_NAME`, a colon, and a space
+ *                are printed before the message.
+ */
 void
 panic (const int status, const char *message, ...)
 {
@@ -66,8 +98,19 @@ panic (const int status, const char *message, ...)
 	exit(status);
 }
 
+/* Function: assert_secure_location
+ *
+ * Abort the programme with status 69 and an error message
+ * if a file, or one of its parent directories, can be modified by
+ * somebody other than root and a given user.
+ *
+ * Arguments:
+ *     path - The file's path.
+ *     uid  - The user's UID.
+ *     gid  - The GID of that user's primary group.
+ */
 void
-assert_secure_path (char *path, uid_t uid, gid_t gid)
+assert_secure_location (char *path, uid_t uid, gid_t gid)
 {
 	struct stat fs;
 	char *ptr = malloc(strlen(path));
@@ -85,23 +128,54 @@ assert_secure_path (char *path, uid_t uid, gid_t gid)
 			panic(69, "%s is world-writable.", p);
 		p = dirname(p);
 	} while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
-	free(ptr); ptr = NULL; p = NULL;
+	free(ptr);
+}
+
+/* Function: starts_with
+ *
+ * Check if a string starts with a substring.
+ *
+ * Arguments:
+ *     str - A string.
+ *     sub - A substring.
+ *
+ * Returns:
+ *     0        - The string starts with the given substring.
+ *     Non-zero - Otherwise.
+ */
+int
+starts_with (char *str, char *sub)
+{
+	int ret = -1;
+	int len = strlen(sub);
+	char *tmp = malloc(len + 1);
+	strncpy(tmp, str, len);
+	tmp[len] = '\0';
+	ret = strcmp(tmp, sub);
+	free(tmp);
+	return ret;
 }
 
 
-// MAIN
-// ====
+/*
+ * MAIN
+ * ====
+ */
 
 int
 main (int argc, char *const argv[])
 {
-	/* Prelude.
-	 * -------- */
+	/*
+	 * Prelude
+	 * -------
+	 */
 	errno = 0;
 
 
-	/* Get path and name of executable.
-	 * -------------------------------- */
+	/*
+	 * Self-discovery
+	 * --------------
+	 */
 
 	// PATH_MAX does not do what it should be doing, but what is the alternative?
 	// See <https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html>.
@@ -118,10 +192,12 @@ main (int argc, char *const argv[])
 	PROG_NAME = basename(PROG_PATH);
 
 
-	/* Check if executable is secure.
-	 * ------------------------------ */
+	/*
+	 * Check location security
+	 * -----------------------
+	 */
 
-	// If it were insecure, this checks wouldn't be run to begin with, of course.
+	// If it were insecure, these checks wouldn't be run to begin with, of course.
 	// Their purpose is to force the user to secure their setup.
 	
 	struct stat fs;
@@ -150,11 +226,13 @@ main (int argc, char *const argv[])
 	if (fs.st_mode & S_IXOTH)
 		panic(69, "%s is world-executable.", PROG_PATH);
 
-	assert_secure_path(PROG_PATH, 0, grp->gr_gid);
+	assert_secure_location(PROG_PATH, 0, grp->gr_gid);
 
 
-	/* Check if programme is run by webserver.
-	 * --------------------------------------- */
+	/*
+	 * Check if run by webserver
+	 * -------------------------
+	 */
 
 	uid_t prog_uid;
 	prog_uid = getuid();
@@ -163,6 +241,7 @@ main (int argc, char *const argv[])
 		panic(71, "UID %s: no such user.", prog_uid);
 	if (strcmp(pwd->pw_name, WWW_USER) != 0)
 		panic(77, "can only be called by user %s.", WWW_USER);
+
 	gid_t prog_gid;
 	prog_gid = getgid();
 	grp = getgrgid(prog_gid);
@@ -172,8 +251,10 @@ main (int argc, char *const argv[])
 		panic(77, "can only be called by group %s.", WWW_GROUP);
 
 
-	/* Get script's path.
-	 * ------------------ */
+	/*
+	 * Get script's path
+	 * -----------------
+	 */
 
 	// This section depends on /proc.
 	// There is no other, reliable, way to find a process' executable.
@@ -191,10 +272,14 @@ main (int argc, char *const argv[])
 	path = realpath(trans, NULL);
 	if (!path)
 		panic(69, "failed to canonicalise %s: %s.", trans, strerror(errno));
+	if (strlen(path) == PATH_MAX)
+		panic(69, "PATH_TRANSLATED is too long.");
 
 
-	/* Check if script's UID and GID are sound.
-	 * ---------------------------------------- */
+	/*
+	 * Check script's UID and GID
+	 * --------------------------
+	 */
 
 	if (stat(path, &fs) != 0)
 		panic(69, "%s: %s.", path, strerror(errno));
@@ -219,8 +304,10 @@ main (int argc, char *const argv[])
 	gid_t gid = fs.st_gid;
 	
 
-	/* Drop privileges.
-	 * ---------------- */
+	/* 
+	 * Drop privileges
+	 * ---------------
+	 */
 	
 	// This section uses setgroups(), which is non-POSIX.
 	// I drop privileges earlier than suExec, because
@@ -237,8 +324,10 @@ main (int argc, char *const argv[])
 		panic(69, "could regain privileges, aborting.");
 
 
-	/* Check if PATH_TRANSLATED points to a PHP script.
-	 * ------------------------------------------------ */
+	/*
+	 * Does PATH_TRANSLATED point to a PHP script?
+	 * -------------------------------------------
+	 */
 
 	char *suffix = NULL;
 	suffix = strrchr(path, '.');
@@ -248,43 +337,42 @@ main (int argc, char *const argv[])
 		panic(64, "%s is not a PHP script.", path);
 
 
-	/* Check if PATH_TRANSLATED points to a secure file.
-	 * ------------------------------------------------- */
+	/* 
+	 * Does PATH_TRANSLATED point to a secure file?
+	 * --------------------------------------------
+	 */
 
-	int base_len = strlen(BASE_DIR) + 1;
-	char *base_dir = malloc(base_len);
-	strcpy(base_dir, BASE_DIR);
+	int base_len = strlen(BASE_DIR);
+	char *restrict base_dir = realpath(BASE_DIR, NULL);
+	if (!base_dir)
+		panic(69, "failed to canonicalise %s: %s.", strerror(errno));
+	if (strcmp(BASE_DIR, base_dir) != 0)
+		panic(69, "%s: not a canonical path.", BASE_DIR);
+	if (strlen(base_dir) == PATH_MAX)
+		panic(69, "path of base directory is too long.");
 	strcat(base_dir, "/");
-	char *prefix = malloc(base_len);
-	strncpy(prefix, path, base_len);
-	if (strcmp(base_dir, prefix) != 0)
+	if (starts_with(path, base_dir) != 0)
 		panic(69, "%s is not in %s.", path, BASE_DIR);
-	free(prefix); prefix = NULL;
 	free(base_dir); base_dir = NULL;
 
-	assert_secure_path(path, uid, gid);
+	assert_secure_location(path, uid, gid);
 	free(path); path = NULL;
 
 
-	/* Clean up the environment.
-	 * ------------------------- */
+	/*
+	 * Clean up the environment
+	 * ------------------------
+	 */
 
 	int i, j;
 	for (i = 0; environ[i]; i++) {
 		char *pair = environ[i];
 		int safe = 0;
-		for (j = 0; SAFE_ENV_VARS[j]; j++) {
-			char *pattern = SAFE_ENV_VARS[j];
-			int len = strlen(pattern);
-			// prefix is defined above.
-			prefix = malloc(len + 1);
-			strncpy(prefix, pair, len);
-			prefix[len] = '\0';
-			if (strcmp(prefix, pattern) == 0) {
+		for (j = 0; ENV_VARS[j]; j++) {
+			if (starts_with(pair, ENV_VARS[j]) == 0) {
 				safe = 1;
 				break;
 			}
-			free(prefix); prefix = NULL;
 		}
 		if (safe != 1) {
 			char *name = strtok(pair, "=");
@@ -299,9 +387,11 @@ main (int argc, char *const argv[])
 		panic(69, "failed to set PATH: %s.", strerror(errno));
 
 
-	/* Call the actual CGI handler.
-	 * ---------------------------- */
+	/* 
+	 * Call PHP
+	 * --------
+	 */
 
-	char *const a[] = { PHP_CGI, NULL };
-	execve(PHP_CGI, a, environ);
+	char *const a[] = { PHP, NULL };
+	execve(PHP, a, environ);
 }
