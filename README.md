@@ -48,7 +48,7 @@ And you need to run it via the CGI for *su-php* to work.
 13. Is the script located inside `BASE_DIR`?
 14. Is the directory the script is located in, and each of its ancestors,
     owned by root or the user the script should be run as and *not* world-writable?
-15. Can environment variables not listed in `SAFE_ENV_VARS` be unset?
+15. Can environment variables not listed in `ENV_VARS` be unset?
 16. Can the environment variable `PATH` be set to the configuration value `PATH`?
 
 Unless all of the above conditions are met, *su-php* aborts.
@@ -61,8 +61,8 @@ That risk is considerable!
 
 ----
 
-Download the
-[latest release](https://github.com/odkr/su-php/releases/latest)
+Download the repository and unpack it.
+<!--[latest release](https://github.com/odkr/su-php/releases/latest)
 and unpack it:
 
 ```sh
@@ -72,7 +72,7 @@ and unpack it:
 	[ "$?" -eq 127 ] && wget --output-document=- "$url"
 ) | tar -xz
 ```
-
+-->
 ----
 
 *su-php* is configured at compile-time.
