@@ -1,6 +1,6 @@
 # su-php
 
-A wrapper that runs PHP scripts under the UID and GID of their owner.
+A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
 
 
 ## Requirements
@@ -18,14 +18,14 @@ A wrapper that runs PHP scripts under the UID and GID of their owner.
 
 *su-php* has only been tested on Debian GNU/Linux.
 
-You also need [PHP](https://php.net/), of course.
+You also need a webserver and [PHP](https://php.net/), of course.
 And you need to run it via the CGI for *su-php* to work.
 
 
 ## Security
 
 **WARNING:**
-*su-php* is in need of real-world testing and a second pair of eyes to audit it.
+*su-php* is in need of real-world testing and an audit.
 **You do *not* want to use it.**
 
 *su-php* performs the following checks to determine whether it should run a PHP script:
@@ -37,29 +37,27 @@ And you need to run it via the CGI for *su-php* to work.
    owned by root or the webserver and *not* world-writable?
 5. Is the executable run as `WWW_USER` and `WWW_GROUP`?
 6. Is the environment variable `PATH_TRANSLATED` set to a non-empty value?
-7. Is the UID of the PHP script's owner not 0 and greater than `MIN_UID`?
-8. Is the GID of the PHP script's owner not 0 and greater than `MIN_GID`?
-9. Do the UID and GID of the PHP reference a user and a group known to the system?
+7. Is the UID of the script's owner not 0 and greater than `MIN_UID`?
+8. Is the GID of the script's owner not 0 and greater than `MIN_GID`?
+9. Do the UID and GID of the script reference a user and a group known to the system?
 10. Can the executable drop all suplemantary groups,
-    set its effective GID to the GID of the PHP script's owner, and
-	its effective UID to the UID of the PHP script's owner?
+    set its effective GID to the GID of the script's owner, and
+	its effective UID to the UID of the script's owner?
 11. After doing that, does resetting its effective UID to 0 fail?
 12. Does the value of `PATH_TRANSLATED` end in '.php'?
-13. Is the PHP script located inside `BASE_DIR`?
-14. Is the directory the PHP script is located in, and each of its ancestors,
+13. Is the script located inside `BASE_DIR`?
+14. Is the directory the script is located in, and each of its ancestors,
     owned by root or the user the script should be run as and *not* world-writable?
 15. Can environment variables not listed in `SAFE_ENV_VARS` be unset?
 16. Can the environment variable `PATH` be set to the configuration value `PATH`?
 
 Unless all of the above conditions are met, *su-php* aborts.
 
-*su-php* does *not* clean up the environent just yet.
-
 
 ## Installation 
 
 You use *su-php* at your own risk!
-And that risk is considerable!
+That risk is considerable!
 
 ----
 
@@ -86,6 +84,7 @@ cd su-php-0.0.0
 "${VISUAL-${EDITOR-vi}}" config.h
 ```
 
+If you are using Debian GNU/Linux and Apache the defaults should be fine.
 
 ----
 
