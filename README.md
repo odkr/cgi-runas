@@ -76,7 +76,7 @@ and unpack it:
 -->
 ----
 
-*su-php* is configured at compile-time.
+*su-php* is configured at compile-time. Don't worry, it compiles in < 1s.
 
 You need to adapt `config.h` before compiling:
 
@@ -85,7 +85,7 @@ cd su-php-0.0.0
 "${VISUAL-${EDITOR-vi}}" config.h
 ```
 
-If you are using Debian GNU/Linux and Apache the defaults should be fine.
+If you are using Debian GNU/Linux and Apache, the defaults should be fine.
 
 ----
 
