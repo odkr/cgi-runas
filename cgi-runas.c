@@ -544,7 +544,7 @@ main ()
 	 * ------------------------
 	 */
 
-	char **var = environ
+	char **var = environ;
 	while (*var) {
 		const char *const *pattern = ENV_VARS;
 		int safe = 0;
