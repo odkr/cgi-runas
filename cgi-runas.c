@@ -1,5 +1,5 @@
 /*
- * Programme: run-php-as
+ * Programme: cgi-runas
  *
  * Run PHP scripts under the UID and GID of their owner.
  *
@@ -239,32 +239,6 @@ struct list
 	return dirs;
 }
 
-/* Function: starts_with
- *
- * Check if a string starts with a substring.
- *
- * Arguments:
- *     str - A string.
- *     sub - A substring.
- *
- * Returns:
- *     1 - The string starts with the given substring.
- *     0 - Otherwise.
- */
-int
-starts_with (char *str, char *sub)
-{
-	int eq = -1;
-	int len = strlen(sub);
-	char *tmp = malloc(len + 1);
-	strncpy(tmp, str, len);
-	tmp[len] = '\0';
-	eq = strcmp(tmp, sub);
-	free(tmp);
-	if (eq == 0) return 1;
-	return 0;
-}
-
 
 /*
  * MAIN
@@ -488,7 +462,7 @@ main ()
 	if (strlen(base_dir) >= PATH_MAX)
 		panic(69, "path of base directory is too long.");
 	strcat(base_dir, "/");
-	if (!starts_with(path, base_dir))
+	if (strncmp(path, BASE_DIR, strlen(BASE_DIR)) != 0)
 		panic(69, "%s: not in %s.", path, BASE_DIR);
 	free(base_dir); base_dir = NULL;
 
@@ -500,7 +474,8 @@ main ()
 	if (strlen(home_dir) >= PATH_MAX)
 		panic(69, "path of %s's home directory is too long.");
 	strcat(home_dir, "/");
-	if (!starts_with(path, home_dir))
+	
+	if (strncmp(path, home_dir, strlen(home_dir)) != 0)
 		panic(69, "%s: not in %s.", path, home_dir);
 
 	*dirs = *parent_dirs(path, home_dir);
@@ -614,7 +589,7 @@ main ()
 		const char *const *pattern = ENV_VARS;
 		int safe = 0;
 		while (*pattern) {
-			if (starts_with(*environ, *pattern)) {
+			if (strncmp(*environ, *pattern, strlen(*pattern)) == 0) {
 				safe = 1;
 				break;
 			}
