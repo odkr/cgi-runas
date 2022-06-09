@@ -88,12 +88,12 @@ That risk is considerable!
 ----
 
 Download the repository and unpack it.
-<!--[latest release](https://github.com/odkr/su-php/releases/latest)
+<!--[latest release](https://github.com/odkr/cgi-runas/releases/latest)
 and unpack it:
 
 ```sh
 (
-	url="https://github.com/odkr/su-php/releases/download/v0.0.0/su-php-0.0.0.tgz"
+	url="https://github.com/odkr/cgi-runas/releases/download/v0.0.0/cgi-runas-0.0.0.tgz"
 	curl --silent --show-error --location "$url"
 	[ "$?" -eq 127 ] && wget --output-document=- "$url"
 ) | tar -xz
@@ -187,7 +187,7 @@ the [configuration file](config.h) for more details.
 ## Contact
 
 If there's something wrong with *cgi-runas*, please
-[open an issue](https://github.com/odkr/su-php/issues).
+[open an issue](https://github.com/odkr/cgi-runas/issues).
 
 
 ## License
