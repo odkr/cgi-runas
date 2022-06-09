@@ -35,9 +35,9 @@ for this to work.
 ## Operation
 
 *cgi-runas* checks if the script file pointed to by the environment variable
-`PATH_TRANSLATED` is secure, gets the UID and the GID of its owner,
-changes its effective UID and its effective GID to that UID and that GID,
-cleans up the environment and the executes the actual CGI handler.
+`PATH_TRANSLATED` is secure, changes its effective UID and its effective GID to
+the UID and the GID of the script's owner, cleans up the environment and then
+executes the actual CGI handler.
 
 
 ## Security
@@ -49,12 +49,12 @@ cleans up the environment and the executes the actual CGI handler.
 *cgi-runas* performs the following checks to determine whether it should run a script:
 
 1. Are `WWW_USER` and `WWW_GROUP` known to the system?
-2. Is the executable owned by UID 0 and `WWW_GROUP` and
+2. Is `cgi-runas` owned by UID 0 and `WWW_GROUP` and
    neither group-writable, nor world-writable, nor world-executable?
-3. Is the directory the executable is located in,
+3. Is the directory `cgi-runas` is located in,
    and each of its parent directories,
    owned by root and neither group- nor world-writable?
-4. Is the executable run as `WWW_USER` and `WWW_GROUP`?
+4. Is `cgi-runas` run as `WWW_USER` and `WWW_GROUP`?
 5. Does the value of `PATH_TRANSLATED` represent a canonical path?
 6. Is the UID of the script's owner not 0, greater than `MIN_UID`,
    and known to the system?
@@ -89,6 +89,8 @@ Some checks go beyond what suExec does, some checks suExec performs were dropped
 
 The default for `ENV_VARS` has been adopted from Apache's suExec.
 
+You will also want to have a look at the [PHP project's recommendations for securing
+CGI-based setups](https://www.php.net/manual/en/security.cgi-bin.php).
 
 ## Installation 
 
