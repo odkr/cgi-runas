@@ -553,7 +553,7 @@ main ()
 				safe = 1;
 				break;
 			}
-			pat++;
+			pattern++;
 		}
 		if (safe != 1) {
 			// strtok moves the pointer,
