@@ -105,6 +105,7 @@ and unpack it:
 Please take the time to read and evaluate the source code.
 
 ```sh
+cd cgi-runas-0.0.0
 less cgi-runas.c
 ```
 
@@ -115,11 +116,11 @@ less cgi-runas.c
 Adapt [config.h](config.h):
 
 ```sh
-cd cgi-runas-0.0.0
 "${VISUAL-${EDITOR-vi}}" config.h
 ```
 
-If you are using Debian GNU/Linux and Apache, the defaults should be fine.
+If you are using Debian GNU/Linux and Apache and want to use *cgi-runas* for PHP,
+the defaults should be fine.
 
 ----
 
