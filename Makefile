@@ -1,2 +1,2 @@
-run-php-as: run-php-as.c config.h
+cgi-runas: cgi-runas.c config.h
 	$(CC) -o$@ $<
