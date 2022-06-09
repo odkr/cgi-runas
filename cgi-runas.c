@@ -7,16 +7,17 @@
  *
  * Copyright 2022 Odin Kroeger
  *
- * This program is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software Foundation,
- * either version 3 of the License, or (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- * PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with this
- * program. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <errno.h>
@@ -263,8 +264,8 @@ main ()
 	// This section depends on /proc.
 	// There is no other, reliable, way to find a process' executable.
 
-	// PATH_MAX does not do what it should be doing, but what is the alternative?
-	// See <https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html>.
+	// PATH_MAX doesn't do what it should be doing, but what's the alternative?
+	// See <https://perma.cc/3TVB-CNNH>.
 	// The '+ 1' should be superfluous, but better be save than sorry.
 
 	prog_path = malloc(PATH_MAX + 1);
@@ -283,8 +284,8 @@ main ()
 	 * -----------------------
 	 */
 
-	// If it were insecure, these checks wouldn't be run to begin with, of course.
-	// Their purpose is to force the user to secure their setup.
+	// If it were insecure, these checks wouldn't be run to begin with,
+	// of course. Their purpose is to force the user to secure their setup.
 
 	struct stat fs;
 	struct group *grp;
@@ -586,14 +587,14 @@ main ()
 	 */
 
 	while (*environ) {
-		const char *const *pattern = ENV_VARS;
+		const char *const *pat = ENV_VARS;
 		int safe = 0;
-		while (*pattern) {
-			if (strncmp(*environ, *pattern, strlen(*pattern)) == 0) {
+		while (*pat) {
+			if (strncmp(*environ, *pat, strlen(*pattern)) == 0) {
 				safe = 1;
 				break;
 			}
-			pattern++;
+			pat++;
 		}
 		if (safe != 1) {
 			// strtok moves the pointer, but that doesn't matter here.

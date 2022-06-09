@@ -74,10 +74,16 @@ cleans up the environment and the executes the actual CGI handler.
 
 Unless all of the above conditions are met, *cgi-runas* aborts.
 
+These checks emulate those of Apache's
+[suExec](https://httpd.apache.org/docs/2.4/suexec.html).
+Some checks go beyond what suExec does, some checks suExec performs were dropped.
+
 *cgi-runas* also cleans up the process' environment:
 
 * it only keeps environment variables listed in `ENV_VARS` and
 * sets the environment variable `PATH` to the [configured](config.h) `PATH`.
+
+The default for `ENV_VARS` has been adopted from Apache's suExec.
 
 
 ## Installation 

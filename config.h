@@ -5,8 +5,8 @@ const char BASE_DIR[] = "/home";
 const char CGI_HANDLER[] = "/usr/lib/cgi-bin/php";
 
 // A list of safe environment variables.
-// Must be terminated with a `NULL`.
-// Copied from Apache's suExec.
+// The list must be terminated with `NULL`.
+// The variable names below have been adopted from Apache's suExec.
 const char *const ENV_VARS[] =
 {
 	// If you do not terminate variable names with a "=",
