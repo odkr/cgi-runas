@@ -99,11 +99,20 @@ and unpack it:
 ) | tar -xz
 ```
 -->
+
+----
+
+Please take the time to read and evaluate the source code.
+
+```sh
+less cgi-runas.c
+```
+
 ----
 
 *cgi-runas* is configured at compile-time. Don't worry, it compiles in < 1s.
 
-Adapt `config.h`:
+Adapt [config.h](config.h):
 
 ```sh
 cd cgi-runas-0.0.0
