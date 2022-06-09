@@ -38,9 +38,6 @@
 // The configuration.
 #include "config.h"
 
-// How deeply path may be nexted.
-#define MAX_PATH_DEPTH 128
-
 // Needed to find the executable.
 #define EXE "/proc/self/exe"
 
@@ -50,18 +47,11 @@
  * =======
  */
 
-/*
- * Global: environ
- *
- * The environemnt.
- */
-extern char **environ;
-
 /* 
  * Global: prog_path
  *
  * The path to the programme's executable.
- * Set by `main`.
+ * Set by <main>.
  */
 char *prog_path = NULL;
 
@@ -69,7 +59,8 @@ char *prog_path = NULL;
  * Global: prog_name
  *
  * The filename of the programme's executable.
- * Set by `main`.
+ * Set by <main>.
+ * Also used by <panic>.
  */ 
 char *prog_name = NULL;
 
@@ -254,6 +245,7 @@ main ()
 	 * Prelude
 	 * -------
 	 */
+	extern char **environ;
 	errno = 0;
 
 
