@@ -60,7 +60,7 @@ And you need to run PHP via the CGI in order for *cgi-runas* to work.
 15. Is the parent directory of the user's home directory,
     and each of its parent directories,
     owned by root and neither group- nor world-writable?
-16. Does the value of `PATH_TRANSLATED` end with `FNAME_SUFFIX`?
+16. Does the value of `PATH_TRANSLATED` end with `SCRIPT_SUFFIX`?
 
 Unless all of the above conditions are met, *cgi-runas* aborts.
 

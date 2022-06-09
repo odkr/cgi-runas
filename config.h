@@ -78,7 +78,7 @@ const gid_t MIN_GID = 1000;
 const char PATH[] = "/usr/bin:/bin";
 
 // Scripts the filename of which does not end with this suffix are rejected.
-const char FNAME_SUFFIX[] = ".php";
+const char SCRIPT_SUFFIX[] = ".php";
 
 // The user the web server runs as.
 const char WWW_USER[] = "www-data";

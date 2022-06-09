@@ -601,8 +601,8 @@ main ()
 	suffix = strrchr(path, '.');
 	if (!suffix)
 		panic(64, "%s: has no filename ending.", path);
-	if (strcmp(suffix, FNAME_SUFFIX) != 0)
-		panic(64, "%s: does not end with \"%s\".", path, FNAME_SUFFIX);
+	if (strcmp(suffix, SCRIPT_SUFFIX) != 0)
+		panic(64, "%s: does not end with \"%s\".", path, SCRIPT_SUFFIX);
 
 
 	/*
