@@ -22,7 +22,7 @@ Linux-based systems should meet those requirements.
 You also need a webserver, of course.
 
 
-# Rationale
+## Rationale
 
 *cgi-runas* is intended to run PHP scripts under the UID and GID of their owner.
 Therefore, the remaining documentation assumes PHP as CGI handler.
