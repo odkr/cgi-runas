@@ -27,6 +27,10 @@ You also need a webserver, of course.
 *cgi-runas* is intended to run PHP scripts under the UID and GID of their owner.
 Therefore, the remaining documentation assumes PHP as CGI handler.
 
+You need to install
+[PHP as CGI handler](https://www.php.net/manual/en/install.unix.commandline.php)
+for this to work.
+
 
 ## Operation
 
@@ -160,28 +164,28 @@ If your web server does not run under the group 'www-data', you need to adapt th
 ----
 
 Move `cgi-runas` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
+You may want to rename it so that its name indicates which CGI handler it is running.
 
 ```sh
-mv cgi-runas /usr/lib/cgi-bin
+mv cgi-runas /usr/lib/cgi-bin/run-php-as
 ```
 
 If your directory for CGI binaries is not `/usr/lib/cgi-bin`, you need to adapt the command above accordingly.
 
 ----
 
-Tell your webserver to run PHP scripts via *cgi-runas*.
+Tell your webserver to run scripts in `BASE_DIR` via *cgi-runas*.
 
-If you are using [Apache](https://www.apache.org) v2, look for
+If you are using [Apache](https://www.apache.org) v2, you can do so by:
 
-> Action application/x-httpd-php /cgi-bin/php
+```apacheconf
+<Directory "/home">
+        Action application/x-httpd-php /cgi-bin/run-php-as
+</Directory>
+```
 
-and replace it with:
-
-> Action application/x-httpd-php /cgi-bin/cgi-runas
-
-You need to run PHP via CGI for *cgi-runas* to work.
-
-That said, you may want to only apply that configuration to particular directories.
+If your `BASE_DIR` is not `/home`, you need to adapt the command above accordingly.
+Note that `run-php-as` is the name that we have given `cgi-runas` above.
 
 
 ## Documentation
