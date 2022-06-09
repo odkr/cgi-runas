@@ -43,7 +43,7 @@ And you need to run PHP via the CGI in order for *su-php* to work.
 7. Is the GID of the script's owner not 0 and greater than `MIN_GID`?
 8. Do the UID and GID of the script reference a user and a group known to the system?
 9. Is the GID of the script's owner also the ID of the owner's primary group?
-10. Can the executable drop all suplemantary groups,
+10. Can the executable drop all supplemantary groups,
     set its effective GID to the GID of the script's owner, and
     its effective UID to the UID of the script's owner?
 11. After doing that, does resetting its effective UID to 0 fail?
