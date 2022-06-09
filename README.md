@@ -47,16 +47,16 @@ And you need to run PHP via the CGI in order for *su-php* to work.
     set its effective GID to the GID of the script's owner, and
     its effective UID to the UID of the script's owner?
 11. After doing that, does resetting its effective UID to 0 fail?
-12. Does the value of `PATH_TRANSLATED` end in '.php'?
-13. Is the script located in `BASE_DIR`?
-14. Is the script located in the home directory of its owner?
-15. Is the directory the script is located in,
+12. Is the script located in `BASE_DIR`?
+13. Is the script located in the home directory of its owner?
+14. Is the directory the script is located in,
     and each of its parent directories up to the user's home directory,
 	owned by the user the script should be run as and
 	neither group- nor world-writable?
 15. Is the parent directory of the user's home directory,
     and each of its parent directories,
     owned by root and neither group- nor world-writable?
+16. Does the value of `PATH_TRANSLATED` end in '.php'?
 17. Can environment variables not listed in `ENV_VARS` be unset?
 18. Can the environment variable `PATH` be set to the configuration value `PATH`?
 
