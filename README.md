@@ -1,11 +1,11 @@
-# su-php
+# run-php-as
 
 A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
 
 
 ## Requirements
 
-*su-php* requires an operating system that:
+*run-php-as* requires an operating system that:
 
 1. complies with
    [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/),
@@ -16,20 +16,24 @@ A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
    [proc](https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html)
    filesystem mounted on `/proc`.
 
-Most Linux distributions should meet those requirements.
-*su-php* has been tested on Debian GNU/Linux.
+Linux-based systems should meet those requirements.
+*run-php-as* has been tested on Debian GNU/Linux.
 
 You also need a webserver and [PHP](https://php.net/), of course.
-And you need to run PHP via the CGI in order for *su-php* to work.
+And you need to run PHP via the CGI in order for *run-php-as* to work.
+
+
+## Rationale
+
 
 
 ## Security
 
 **WARNING:**
-*su-php* is in need of real-world testing and an audit.
+*run-php-as* is in need of real-world testing and an audit.
 **You do *not* want to use it.**
 
-*su-php* performs the following checks to determine whether it should run a PHP script:
+*run-php-as* performs the following checks to determine whether it should run a PHP script:
 
 1. Are `WWW_USER` and `WWW_GROUP` known to the system?
 2. Is the executable owned by UID 0 and `WWW_GROUP` and
@@ -60,12 +64,12 @@ And you need to run PHP via the CGI in order for *su-php* to work.
 17. Can environment variables not listed in `ENV_VARS` be unset?
 18. Can the environment variable `PATH` be set to the configuration value `PATH`?
 
-Unless all of the above conditions are met, *su-php* aborts.
+Unless all of the above conditions are met, *run-php-as* aborts.
 
 
 ## Installation 
 
-You use *su-php* at your own risk!
+You use *run-php-as* at your own risk!
 That risk is considerable!
 
 ----
@@ -84,12 +88,12 @@ and unpack it:
 -->
 ----
 
-*su-php* is configured at compile-time. Don't worry, it compiles in < 1s.
+*run-php-as* is configured at compile-time. Don't worry, it compiles in < 1s.
 
 Adapt `config.h`:
 
 ```sh
-cd su-php-0.0.0
+cd run-php-as-0.0.0
 "${VISUAL-${EDITOR-vi}}" config.h
 ```
 
@@ -97,28 +101,28 @@ If you are using Debian GNU/Linux and Apache, the defaults should be fine.
 
 ----
 
-Once you are done, compile *su-php* by:
+Once you are done, compile *run-php-as* by:
 
 ```sh
 make
 ```
 
-There should now be an executable `su-php` in the repository's top-level directory:
+There should now be an executable `run-php-as` in the repository's top-level directory:
 
 ```sh
-$ ls su-php
-su-php
+$ ls run-php-as
+run-php-as
 ```
 
 
 ----
 
 
-Change `su-php`'s owner and permissions by:
+Change `run-php-as`'s owner and permissions by:
 
 ```sh
-chown root:www-data su-php
-chmod u=rws,g=x,o= su-php
+chown root:www-data run-php-as
+chmod u=rws,g=x,o= run-php-as
 ```
 
 If your web server does not run under the group 'www-data', you need to adapt the command above accordingly.
@@ -126,17 +130,17 @@ If your web server does not run under the group 'www-data', you need to adapt th
 
 ----
 
-Move `su-php` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
+Move `run-php-as` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
 
 ```sh
-mv su-php /usr/lib/cgi-bin
+mv run-php-as /usr/lib/cgi-bin
 ```
 
 If your directory for CGI binaries is not `/usr/lib/cgi-bin`, you need to adapt the command above accordingly.
 
 ----
 
-Tell your webserver to run PHP scripts via *su-php*.
+Tell your webserver to run PHP scripts via *run-php-as*.
 
 If you are using [Apache](https://www.apache.org) v2, look for
 
@@ -144,20 +148,21 @@ If you are using [Apache](https://www.apache.org) v2, look for
 
 and replace it with:
 
-> Action application/x-httpd-php /cgi-bin/su-php
+> Action application/x-httpd-php /cgi-bin/run-php-as
 
-You need to run PHP via CGI for *su-php* to work.
+You need to run PHP via CGI for *run-php-as* to work.
 
+FIXME: Should only be done for a limited context.
 
 ## Documentation
 
-See the [source code](su-php.c) and the [configuration file](config.h) for more details.
-It's short and straightforward, I promise.
+See the [source code](run-php-as.c) and
+the [configuration file](config.h) for more details.
 
 
 ## Contact
 
-If there's something wrong with *su-php*, please
+If there's something wrong with *run-php-as*, please
 [open an issue](https://github.com/odkr/su-php/issues).
 
 
@@ -186,4 +191,4 @@ SOFTWARE.
 
 ## Further Information
 
-GitHub: <https://github.com/odkr/su-php>
+GitHub: <https://github.com/odkr/run-php-as>
