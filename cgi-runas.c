@@ -264,7 +264,8 @@ main ()
 	// This section depends on /proc.
 	// There is no other, reliable, way to find a process' executable.
 
-	// PATH_MAX doesn't do what it should be doing, but what's the alternative?
+	// PATH_MAX doesn't do what it should be doing,
+	// but what's the alternative?
 	// See <https://perma.cc/3TVB-CNNH>.
 	// The '+ 1' should be superfluous, but better be save than sorry.
 
@@ -294,10 +295,12 @@ main ()
 	pwd = getpwnam(WWW_USER);
 	if (!pwd)
 		panic(67, "%s: no such user.", WWW_USER);
+	free(pwd); pwd = NULL;
 
 	grp = getgrnam(WWW_GROUP);
 	if (!grp)
 		panic(67, "%s: no such group.", WWW_GROUP);
+	free(grp); grp = NULL;
 
 	if (stat(prog_path, &fs) != 0)
 		panic(69, "%s: %s.", prog_path, strerror(errno));
@@ -312,6 +315,7 @@ main ()
 		panic(69, "%s: is world-writable.", prog_path);
 	if (fs.st_mode & S_IXOTH)
 		panic(69, "%s: is world-executable.", prog_path);
+
 	
 	struct list *dirs = parent_dirs(prog_path, NULL);
 	if (!dirs) {
@@ -338,23 +342,6 @@ main ()
 	}
 	dirs = NULL;
 
-	// char *ptr = NULL;
-	// if(!(*ptr = strdup(prog_path)))
-	//		panic(71, strerror(errno));
-	// char *p = *ptr;
-	// do {
-	// 	if (stat(p, &fs) != 0)
-	// 		panic(69, "%s: %s.", p, strerror(errno));
-	// 	if (fs.st_uid != 0)
-	// 		panic(69, "%s: not owned by UID 0.", p);
-	// 	if (fs.st_mode & S_IWGRP)
-	// 		panic(69, "%s is group-writable.", p);
-	// 	if (fs.st_mode & S_IWOTH)
-	// 		panic(69, "%s is world-writable.", p);
-	// 	p = dirname(p);
-	// } while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
-	// free(ptr); ptr = NULL;
-
 
 	/*
 	 * Check if run by webserver
@@ -368,6 +355,7 @@ main ()
 		panic(71, "UID %d: no such user.", prog_uid);
 	if (strcmp(pwd->pw_name, WWW_USER) != 0)
 		panic(77, "must be called by user %s.", WWW_USER);
+	free(pwd); pwd = NULL;
 
 	gid_t prog_gid;
 	prog_gid = getgid();
@@ -376,6 +364,7 @@ main ()
 		panic(71, "GID %d: no such group.", prog_gid);
 	if (strcmp(grp->gr_name, WWW_GROUP) != 0)
 		panic(77, "must be called by group %s.", WWW_GROUP);
+	free(grp); grp = NULL;
 
 
 	/*
@@ -424,7 +413,7 @@ main ()
 	if (!grp)
 		panic(67, "GID %d: no such group.", fs.st_uid);
 	if (fs.st_gid != pwd->pw_gid)
-		panic(67, "GID %d: not %s's GID.", pwd->pw_name);
+		panic(67, "GID %d: not %s's GID.", fs.st_gid, pwd->pw_name);
 
 	uid_t uid = fs.st_uid;
 	gid_t gid = fs.st_gid;
@@ -475,11 +464,11 @@ main ()
 	if (strlen(home_dir) >= PATH_MAX)
 		panic(69, "path of %s's home directory is too long.");
 	strcat(home_dir, "/");
-	
 	if (strncmp(path, home_dir, strlen(home_dir)) != 0)
 		panic(69, "%s: not in %s.", path, home_dir);
+	free(home_dir); home_dir = NULL;
 
-	*dirs = *parent_dirs(path, home_dir);
+	dirs = parent_dirs(path, pwd->pw_dir);
 	if (!dirs) {
 		if (errno) panic(71, strerror(errno));
 		else panic(78, "list head is NULL, this is a bug.");
@@ -506,13 +495,13 @@ main ()
 	}
 	dirs = NULL;
 
-	*dirs = *parent_dirs(home_dir, NULL);
+	dirs = parent_dirs(pwd->pw_dir, NULL);
 	if (!dirs) {
 		if (errno) panic(71, strerror(errno));
 		else panic(78, "list head is NULL, this is a bug.");
 	}
 
-	*idx = *dirs;
+	idx = dirs;
 	prv = NULL;
 	while (idx) {
 		char *dir = idx->item;
@@ -533,43 +522,12 @@ main ()
 	}
 	dirs = NULL;
 
-	//
-	// p = path;
-	// do {
-	// 	if (stat(p, &fs) != 0)
-	// 		panic(69, "%s: %s.", p, strerror(errno));
-	// 	if (fs.st_uid != uid)
-	// 		panic(69, "%s: not owned by UID %d.", p, uid);
-	// 	if (fs.st_gid != gid)
-	// 		panic(69, "%s: not owned by GID %d.", p, gid);
-	// 	if (fs.st_mode & S_IWGRP)
-	// 		panic(69, "%s is group-writable.", p);
-	// 	if (fs.st_mode & S_IWOTH)
-	// 		panic(69, "%s is world-writable.", p);
-	// 	if (strcmp(p, home_dir) != 0) break;
-	// 	p = dirname(p);
-	// } while (strcmp(p, "/") != 0 && strcmp(p, ".") != 0);
-	// free(path); path = NULL;
-	//
-	// p = dirname(home_dir);
-	// do {
-	// 	if (stat(p, &fs) != 0)
-	// 		panic(69, "%s: %s.", p, strerror(errno));
-	// 	if (fs.st_uid != 0)
-	// 		panic(69, "%s: not owned by UID 0.", p);
-	// 	if (fs.st_gid != 0)
-	// 		panic(69, "%s: not owned by GID 0.", p);
-	// 	if (fs.st_mode & S_IWGRP)
-	// 		panic(69, "%s is group-writable.", p);
-	// 	if (fs.st_mode & S_IWOTH)
-	// 		panic(69, "%s is world-writable.", p);
-	// 	p = dirname(p);
-	// } while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
-	// free(home_dir); home_dir = NULL;
+	free(pwd); pwd = NULL;
+	free(grp); grp = NULL;
 
 
 	/*
-	 * Does PATH_TRANSLATED point to a PHP script?
+	 * Does PATH_TRANSLATED point to a CGI script?
 	 * -------------------------------------------
 	 */
 
@@ -586,25 +544,27 @@ main ()
 	 * ------------------------
 	 */
 
-	while (*environ) {
-		const char *const *pat = ENV_VARS;
+	char **var = environ
+	while (*var) {
+		const char *const *pattern = ENV_VARS;
 		int safe = 0;
-		while (*pat) {
-			if (strncmp(*environ, *pat, strlen(*pattern)) == 0) {
+		while (*pattern) {
+			if (strncmp(*var, *pattern, strlen(*pattern)) == 0) {
 				safe = 1;
 				break;
 			}
 			pat++;
 		}
 		if (safe != 1) {
-			// strtok moves the pointer, but that doesn't matter here.
-			char *name = strtok(*environ, "=");
+			// strtok moves the pointer,
+			// but that doesn't matter here.
+			char *name = strtok(*var, "=");
 			if (!name)
-				name = *environ;
+				name = *var;
 			if (unsetenv(name) != 0)
 				panic(69, "failed to unset %s: %s.", name, strerror(errno));
 		}
-		*environ++;
+		*var++;
 	}
 
 	if (setenv("PATH", PATH, 1) != 0)
