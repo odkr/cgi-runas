@@ -203,7 +203,7 @@ push (struct list **head, void *item)
  * Example:
  *
  *    === C ===
- *    struct list *dirs = parent_dirs("/some/dir", NULL);
+ *    struct list *dirs = *parent_dirs("/some/dir", NULL);
  *    if (!dirs) {
  *        if (errno) panic(71, strerror(errno));
  *        else panic(78, "list head is NULL, this is a bug.")
@@ -341,14 +341,14 @@ main ()
 	struct list *dirs = parent_dirs(prog_path, NULL);
 	if (!dirs) {
 		if (errno) panic(71, strerror(errno));
-		else panic(78, "list head is NULL, this is a bug.")
+		else panic(78, "list head is NULL, this is a bug.");
 	}
 	
 	struct list *idx = dirs;
 	struct list *prv = NULL;
 	while (idx) {
 		char *dir = idx->item;
-		prev = idx->prev;
+		prv = idx->prev;
 		if (stat(dir, &fs) != 0)
 			panic(69, "%s: %s.", dir, strerror(errno));
 		if (fs.st_uid != 0)
@@ -359,7 +359,7 @@ main ()
 			panic(69, "%s: is world-writable.", dir);
 		free(dir);
 		free(idx);
-		idx = prev;
+		idx = prv;
 	}
 	dirs = NULL;
 
@@ -503,17 +503,17 @@ main ()
 	if (!starts_with(path, home_dir))
 		panic(69, "%s: not in %s.", path, home_dir);
 
-	*dirs = parent_dirs(path, home_dir);
+	*dirs = *parent_dirs(path, home_dir);
 	if (!dirs) {
 		if (errno) panic(71, strerror(errno));
-		else panic(78, "list head is NULL, this is a bug.")
+		else panic(78, "list head is NULL, this is a bug.");
 	}
 	
-	struct list *idx = dirs;
-	struct list *prv = NULL;
+	*idx = *dirs;
+	prv = NULL;
 	while (idx) {
 		char *dir = idx->item;
-		prev = idx->prev;
+		prv = idx->prev;
 		if (stat(dir, &fs) != 0)
 			panic(69, "%s: %s.", dir, strerror(errno));
 		if (fs.st_uid != uid)
@@ -526,22 +526,22 @@ main ()
 			panic(69, "%s: is world-writable.", dir);
 		free(dir);
 		free(idx);
-		idx = prev;
+		idx = prv;
 	}
 	dirs = NULL;
 
-	*dirs = parent_dirs(home_dir, NULL);
+	*dirs = *parent_dirs(home_dir, NULL);
 	if (!dirs) {
 		if (errno) panic(71, strerror(errno));
-		else panic(78, "list head is NULL, this is a bug.")
+		else panic(78, "list head is NULL, this is a bug.");
 	}
 
-	struct list *idx = dirs;
-	struct list *prv = NULL;
+	*idx = *dirs;
+	prv = NULL;
 	while (idx) {
 		char *dir = idx->item;
-		prev = idx->prev;
-		if (stat(p, &fs) != 0)
+		prv = idx->prev;
+		if (stat(dir, &fs) != 0)
 			panic(69, "%s: %s.", dir, strerror(errno));
 		if (fs.st_uid != 0)
 			panic(69, "%s: not owned by UID 0.", dir);
@@ -553,7 +553,7 @@ main ()
 			panic(69, "%s: is world-writable.", dir);
 		free(dir);
 		free(idx);
-		idx = prev;
+		idx = prv;
 	}
 	dirs = NULL;
 
