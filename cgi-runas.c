@@ -1,23 +1,24 @@
 /*
  * Programme: cgi-runas
  *
- * Run PHP scripts under the UID and GID of their owner.
+ * Run CGI scripts as their owner.
  *
- * See <https://https://github.com/odkr/su-php> for details.
+ * See <https://https://github.com/odkr/cgi-runas> for details.
  *
  * Copyright 2022 Odin Kroeger
  *
- * This program is free software: you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the
- * Free Software Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * This programme is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * This programme is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <errno.h>
@@ -470,7 +471,7 @@ main ()
 		else panic(78, "list head is NULL, this is a bug.");
 	}
 	
-	*idx = *dirs;
+	idx = dirs;
 	prv = NULL;
 	while (idx) {
 		char *dir = idx->item;
