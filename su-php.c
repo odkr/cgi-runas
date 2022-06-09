@@ -204,7 +204,7 @@ main ()
 		if (stat(p, &fs) != 0)
 			panic(69, "%s: %s.", p, strerror(errno));
 		if (fs.st_uid != 0)
-			panic(69, "%s's UID is insecure.", p);
+			panic(69, "%s: not owned by UID 0.", p);
 		if (fs.st_mode & S_IWGRP)
 			panic(69, "%s is group-writable.", p);
 		if (fs.st_mode & S_IWOTH)
@@ -284,6 +284,8 @@ main ()
 	grp = getgrgid(fs.st_gid);
 	if (!grp)
 		panic(67, "GID %d: no such group.", fs.st_uid);
+	if (fs.st_gid != pwd->pw_gid)
+		panic(67, "GID %d: not %s's GID.", pwd->pw_name);
 
 	uid_t uid = fs.st_uid;
 	gid_t gid = fs.st_gid;
@@ -309,19 +311,6 @@ main ()
 		panic(69, "could regain privileges, aborting.");
 
 
-	/*
-	 * Does PATH_TRANSLATED point to a PHP script?
-	 * -------------------------------------------
-	 */
-
-	char *suffix = NULL;
-	suffix = strrchr(path, '.');
-	if (!suffix)
-		panic(64, "%s has no filename ending.", path);
-	if (strcmp(suffix, ".php") != 0)
-		panic(64, "%s is not a PHP script.", path);
-
-
 	/* 
 	 * Does PATH_TRANSLATED point to a secure file?
 	 * --------------------------------------------
@@ -339,22 +328,62 @@ main ()
 		panic(69, "%s is not in %s.", path, BASE_DIR);
 	free(base_dir); base_dir = NULL;
 
-	ptr = malloc(strlen(path) + 1);
-	strcpy(ptr, path);
-	p = ptr;
+	char *home_dir = realpath(pwd->pw_dir, NULL);
+	if (!home_dir)
+		panic(69, "failed to canonicalise %s: %s.", pwd->pw_dir, strerror(errno));
+	if (strcmp(pwd->pw_dir, home_dir) != 0)
+		panic(69, "%s: not a canonical path.", pwd->pw_dir);
+	if (strlen(home_dir) >= PATH_MAX)
+		panic(69, "path of %s's home directory is too long.");	
+	strcat(home_dir, "/");
+	if (!starts_with(path, home_dir))
+		panic(69, "%s is not in %s.", path, home_dir);
+
+	p = path;
 	do {
 		if (stat(p, &fs) != 0)
 			panic(69, "%s: %s.", p, strerror(errno));
-		if (fs.st_uid != 0 && fs.st_uid != uid)
-			panic(69, "%s's UID is insecure.", p);
-		if (fs.st_gid != 0 && fs.st_gid != gid)
-			panic(69, "%s's GID is insecure.", p);
+		if (fs.st_uid != uid)
+			panic(69, "%s: not owned by UID %d.", p, uid);
+		if (fs.st_gid != gid)
+			panic(69, "%s: not owned by GID %d.", p, gid);
+		if (fs.st_mode & S_IWGRP)
+			panic(69, "%s is group-writable.", p);
+		if (fs.st_mode & S_IWOTH)
+			panic(69, "%s is world-writable.", p);
+		if (strcmp(p, home_dir) != 0) break;
+		p = dirname(p);
+	} while (strcmp(p, "/") != 0 && strcmp(p, ".") != 0);
+	free(path); path = NULL;
+
+	p = dirname(home_dir);
+	do {
+		if (stat(p, &fs) != 0)
+			panic(69, "%s: %s.", p, strerror(errno));
+		if (fs.st_uid != 0)
+			panic(69, "%s: not owned by UID 0.", p);
+		if (fs.st_gid != 0)
+			panic(69, "%s: not owned by GID 0.", p);
+		if (fs.st_mode & S_IWGRP)
+			panic(69, "%s is group-writable.", p);
 		if (fs.st_mode & S_IWOTH)
 			panic(69, "%s is world-writable.", p);
 		p = dirname(p);
 	} while ((strcmp(p, "/") != 0 && strcmp(p, ".") != 0));
-	free(ptr); ptr = NULL;
-	free(path); path = NULL;
+	free(home_dir); home_dir = NULL;
+
+
+	/*
+	 * Does PATH_TRANSLATED point to a PHP script?
+	 * -------------------------------------------
+	 */
+
+	char *suffix = NULL;
+	suffix = strrchr(path, '.');
+	if (!suffix)
+		panic(64, "%s has no filename ending.", path);
+	if (strcmp(suffix, ".php") != 0)
+		panic(64, "%s is not a PHP script.", path);
 
 
 	/*
