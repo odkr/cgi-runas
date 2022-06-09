@@ -295,12 +295,10 @@ main ()
 	pwd = getpwnam(WWW_USER);
 	if (!pwd)
 		panic(67, "%s: no such user.", WWW_USER);
-	free(pwd); pwd = NULL;
 
 	grp = getgrnam(WWW_GROUP);
 	if (!grp)
 		panic(67, "%s: no such group.", WWW_GROUP);
-	free(grp); grp = NULL;
 
 	if (stat(prog_path, &fs) != 0)
 		panic(69, "%s: %s.", prog_path, strerror(errno));
@@ -355,7 +353,6 @@ main ()
 		panic(71, "UID %d: no such user.", prog_uid);
 	if (strcmp(pwd->pw_name, WWW_USER) != 0)
 		panic(77, "must be called by user %s.", WWW_USER);
-	free(pwd); pwd = NULL;
 
 	gid_t prog_gid;
 	prog_gid = getgid();
@@ -364,7 +361,6 @@ main ()
 		panic(71, "GID %d: no such group.", prog_gid);
 	if (strcmp(grp->gr_name, WWW_GROUP) != 0)
 		panic(77, "must be called by group %s.", WWW_GROUP);
-	free(grp); grp = NULL;
 
 
 	/*
@@ -521,9 +517,6 @@ main ()
 		idx = prv;
 	}
 	dirs = NULL;
-
-	free(pwd); pwd = NULL;
-	free(grp); grp = NULL;
 
 
 	/*
