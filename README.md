@@ -51,25 +51,26 @@ cleans up the environment and the executes the actual CGI handler.
    and each of its parent directories,
    owned by root and neither group- nor world-writable?
 4. Is the executable run as `WWW_USER` and `WWW_GROUP`?
-5. Does the value of `PATH_TRANSLATED` represent an absolute path?
-6. Is the UID of the script's owner not 0 and greater than `MIN_UID`?
-7. Is the GID of the script's owner not 0 and greater than `MIN_GID`?
-8. Do the UID and GID of the script reference a user and a group known to the system?
-9. Is the GID of the script's owner also the ID of the owner's primary group?
-10. Can the executable drop all supplemantary groups,
-    set its effective GID to the GID of the script's owner, and
-    its effective UID to the UID of the script's owner?
-11. After doing that, does resetting its effective UID to 0 fail?
-12. Is the script located in `BASE_DIR`?
-13. Is the script located in the home directory of its owner?
-14. Is the directory the script is located in,
+5. Does the value of `PATH_TRANSLATED` represent a canonical path?
+6. Is the UID of the script's owner not 0, greater than `MIN_UID`,
+   and known to the system?
+7. Is the GID of the script's owner not 0, greater than `MIN_GID`,
+   and known to the system?
+8. Is the GID of the script's owner also the ID of the owner's primary group?
+9. Can the executable drop all supplemantary groups,
+   set its effective GID to the GID of the script's owner, and
+   its effective UID to the UID of the script's owner?
+10. After doing that, does resetting its effective UID to 0 fail?
+11. Is the script located in `BASE_DIR`?
+12. Is the script located in the home directory of its owner?
+13. Is the directory the script is located in,
     and each of its parent directories up to the user's home directory,
 	owned by the user the script should be run as and
 	neither group- nor world-writable?
-15. Is the parent directory of the user's home directory,
+14. Is the parent directory of the user's home directory,
     and each of its parent directories,
     owned by root and neither group- nor world-writable?
-16. Does the value of `PATH_TRANSLATED` end with `SCRIPT_SUFFIX`?
+15. Does the value of `PATH_TRANSLATED` end with `SCRIPT_SUFFIX`?
 
 Unless all of the above conditions are met, *cgi-runas* aborts.
 
