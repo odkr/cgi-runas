@@ -25,7 +25,6 @@ You also need a webserver, of course.
 ## Rationale
 
 *cgi-runas* is intended to run PHP scripts under the UID and GID of their owner.
-Therefore, the remaining documentation assumes PHP as CGI handler.
 
 You need to install
 [PHP as CGI handler](https://www.php.net/manual/en/install.unix.commandline.php)
@@ -89,8 +88,8 @@ Some checks go beyond what suExec does, some checks suExec performs were dropped
 
 The default for `ENV_VARS` has been adopted from Apache's suExec.
 
-You will also want to have a look at the [PHP project's recommendations for securing
-CGI-based setups](https://www.php.net/manual/en/security.cgi-bin.php).
+You will also want to have a look at the PHP project's [recommendations for securing
+CGI-based PHP setups](https://www.php.net/manual/en/security.cgi-bin.php).
 
 ## Installation 
 
