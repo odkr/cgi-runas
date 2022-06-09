@@ -1,11 +1,11 @@
-# run-php-as
+# cgi-runas
 
 A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
 
 
 ## Requirements
 
-*run-php-as* requires an operating system that:
+*cgi-runas* requires an operating system that:
 
 1. complies with
    [POSIX](https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/),
@@ -17,10 +17,10 @@ A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
    filesystem mounted on `/proc`.
 
 Linux-based systems should meet those requirements.
-*run-php-as* has been tested on Debian GNU/Linux.
+*cgi-runas* has been tested on Debian GNU/Linux.
 
 You also need a webserver and [PHP](https://php.net/), of course.
-And you need to run PHP via the CGI in order for *run-php-as* to work.
+And you need to run PHP via the CGI in order for *cgi-runas* to work.
 
 
 ## Rationale
@@ -30,10 +30,10 @@ And you need to run PHP via the CGI in order for *run-php-as* to work.
 ## Security
 
 **WARNING:**
-*run-php-as* is in need of real-world testing and an audit.
+*cgi-runas* is in need of real-world testing and an audit.
 **You do *not* want to use it.**
 
-*run-php-as* performs the following checks to determine whether it should run a PHP script:
+*cgi-runas* performs the following checks to determine whether it should run a script:
 
 1. Are `WWW_USER` and `WWW_GROUP` known to the system?
 2. Is the executable owned by UID 0 and `WWW_GROUP` and
@@ -60,16 +60,18 @@ And you need to run PHP via the CGI in order for *run-php-as* to work.
 15. Is the parent directory of the user's home directory,
     and each of its parent directories,
     owned by root and neither group- nor world-writable?
-16. Does the value of `PATH_TRANSLATED` end in '.php'?
-17. Can environment variables not listed in `ENV_VARS` be unset?
-18. Can the environment variable `PATH` be set to the configuration value `PATH`?
+16. Does the value of `PATH_TRANSLATED` end with `FNAME_SUFFIX`?
 
-Unless all of the above conditions are met, *run-php-as* aborts.
+Unless all of the above conditions are met, *cgi-runas* aborts.
+
+*cgi-runas* also cleans up the process' environment.
+It only keeps environment variables listed in `ENV_VARS` and
+sets the environment variable `PATH` to the `PATH` given.
 
 
 ## Installation 
 
-You use *run-php-as* at your own risk!
+You use *cgi-runas* at your own risk!
 That risk is considerable!
 
 ----
@@ -88,12 +90,12 @@ and unpack it:
 -->
 ----
 
-*run-php-as* is configured at compile-time. Don't worry, it compiles in < 1s.
+*cgi-runas* is configured at compile-time. Don't worry, it compiles in < 1s.
 
 Adapt `config.h`:
 
 ```sh
-cd run-php-as-0.0.0
+cd cgi-runas-0.0.0
 "${VISUAL-${EDITOR-vi}}" config.h
 ```
 
@@ -101,28 +103,28 @@ If you are using Debian GNU/Linux and Apache, the defaults should be fine.
 
 ----
 
-Once you are done, compile *run-php-as* by:
+Once you are done, compile *cgi-runas* by:
 
 ```sh
 make
 ```
 
-There should now be an executable `run-php-as` in the repository's top-level directory:
+There should now be an executable `cgi-runas` in the repository's top-level directory:
 
 ```sh
-$ ls run-php-as
-run-php-as
+$ ls cgi-runas
+cgi-runas
 ```
 
 
 ----
 
 
-Change `run-php-as`'s owner and permissions by:
+Change `cgi-runas`'s owner and permissions by:
 
 ```sh
-chown root:www-data run-php-as
-chmod u=rws,g=x,o= run-php-as
+chown root:www-data cgi-runas
+chmod u=rws,g=x,o= cgi-runas
 ```
 
 If your web server does not run under the group 'www-data', you need to adapt the command above accordingly.
@@ -130,17 +132,17 @@ If your web server does not run under the group 'www-data', you need to adapt th
 
 ----
 
-Move `run-php-as` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
+Move `cgi-runas` into your directory for CGI binaries (e.g., `/usr/lib/cgi-bin`).
 
 ```sh
-mv run-php-as /usr/lib/cgi-bin
+mv cgi-runas /usr/lib/cgi-bin
 ```
 
 If your directory for CGI binaries is not `/usr/lib/cgi-bin`, you need to adapt the command above accordingly.
 
 ----
 
-Tell your webserver to run PHP scripts via *run-php-as*.
+Tell your webserver to run PHP scripts via *cgi-runas*.
 
 If you are using [Apache](https://www.apache.org) v2, look for
 
@@ -148,21 +150,21 @@ If you are using [Apache](https://www.apache.org) v2, look for
 
 and replace it with:
 
-> Action application/x-httpd-php /cgi-bin/run-php-as
+> Action application/x-httpd-php /cgi-bin/cgi-runas
 
-You need to run PHP via CGI for *run-php-as* to work.
+You need to run PHP via CGI for *cgi-runas* to work.
 
 FIXME: Should only be done for a limited context.
 
 ## Documentation
 
-See the [source code](run-php-as.c) and
+See the [source code](cgi-runas.c) and
 the [configuration file](config.h) for more details.
 
 
 ## Contact
 
-If there's something wrong with *run-php-as*, please
+If there's something wrong with *cgi-runas*, please
 [open an issue](https://github.com/odkr/su-php/issues).
 
 
@@ -191,4 +193,4 @@ SOFTWARE.
 
 ## Further Information
 
-GitHub: <https://github.com/odkr/run-php-as>
+GitHub: <https://github.com/odkr/cgi-runas>
