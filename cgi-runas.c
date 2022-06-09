@@ -414,8 +414,6 @@ main ()
 		panic(64, "PATH_TRANSLATED is not set.");
 	if (strcmp(trans, "") == 0)
 		panic(64, "PATH_TRANSLATED is empty.");
-	if (trans[0] != '/')
-		panic(64, "%s: not an absolute path.", trans);
 
 	char *restrict path = NULL;
 	path = realpath(trans, NULL);
@@ -423,6 +421,8 @@ main ()
 		panic(69, "failed to canonicalise %s: %s.", trans, strerror(errno));
 	if (strlen(path) >= PATH_MAX)
 		panic(69, "PATH_TRANSLATED is too long.");
+	if (strcmp(trans, path) != 0)
+		panic(69, "%s: not a canonical path.", trans);
 
 
 	/*
