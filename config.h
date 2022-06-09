@@ -1,17 +1,8 @@
-// PHP scripts outside of this directory are rejected.
+// Scripts outside of this directory are rejected.
 const char BASE_DIR[] = "/home";
 
-// PHP scripts owned by users with a UID lower than this one are rejected.
-const uid_t MIN_UID = 1000;
-
-// PHP scripts owned by groups with a GID lower than this one are rejected.
-const gid_t MIN_GID = 1000;
-
-// What to set the `PATH` environment variable to.
-const char PATH[] = "/usr/bin:/bin";
-
-// The absolute path of the CGI handler to run PHP scripts with.
-const char PHP_CGI[] = "/usr/lib/cgi-bin/php";
+// The absolute path of the CGI handler to run scripts with.
+const char CGI_HANDLER[] = "/usr/lib/cgi-bin/php";
 
 // A list of safe environment variables.
 // Must be terminated with a `NULL`.
@@ -76,6 +67,18 @@ const char *const ENV_VARS[] =
 	// Terminator. DO *NOT* REMOVE!
 	NULL
 };
+
+// Scripts owned by users with a UID lower than this one are rejected.
+const uid_t MIN_UID = 1000;
+
+// Scripts owned by groups with a GID lower than this one are rejected.
+const gid_t MIN_GID = 1000;
+
+// What to set the `PATH` environment variable to.
+const char PATH[] = "/usr/bin:/bin";
+
+// Scripts the filename of which does not end with this suffix are rejected.
+const char FNAME_SUFFIX[] = ".php";
 
 // The user the web server runs as.
 const char WWW_USER[] = "www-data";
