@@ -1,6 +1,6 @@
 # cgi-runas
 
-A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
+A wrapper around CGI handlers that runs scripts under the UID and GID of their owner.
 
 
 ## Requirements
@@ -19,12 +19,21 @@ A wrapper around PHP that runs PHP scripts under the UID and GID of their owner.
 Linux-based systems should meet those requirements.
 *cgi-runas* has been tested on Debian GNU/Linux.
 
-You also need a webserver and [PHP](https://php.net/), of course.
-And you need to run PHP via the CGI in order for *cgi-runas* to work.
+You also need a webserver, of course.
 
 
-## Rationale
+# Rationale
 
+*cgi-runas* is intended to run PHP scripts under the UID and GID of their owner.
+Therefore, the remaining documentation assumes PHP as CGI handler.
+
+
+## Operation
+
+*cgi-runas* checks if the script file pointed to by the environment variable
+`PATH_TRANSLATED` is secure, gets the UID and the GID of its owner,
+changes its effective UID and its effective GID to that UID and that GID,
+cleans up the environment and the executes the actual CGI handler.
 
 
 ## Security
@@ -64,9 +73,10 @@ And you need to run PHP via the CGI in order for *cgi-runas* to work.
 
 Unless all of the above conditions are met, *cgi-runas* aborts.
 
-*cgi-runas* also cleans up the process' environment.
-It only keeps environment variables listed in `ENV_VARS` and
-sets the environment variable `PATH` to the `PATH` given.
+*cgi-runas* also cleans up the process' environment:
+
+* it only keeps environment variables listed in `ENV_VARS` and
+* sets the environment variable `PATH` to the [configured](config.h) `PATH`.
 
 
 ## Installation 
@@ -154,7 +164,8 @@ and replace it with:
 
 You need to run PHP via CGI for *cgi-runas* to work.
 
-FIXME: Should only be done for a limited context.
+That said, you may want to only apply that configuration to particular directories.
+
 
 ## Documentation
 
