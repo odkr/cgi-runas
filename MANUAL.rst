@@ -22,14 +22,18 @@ then executes the actual CGI handler.
 CONFIGURATION
 =============
 
-**cgi-runas** is configured by adapting the include file *config.h*
+**cgi-runas** is configured by adapting the header file *config.h*
 before compilation.
 
 **CGI_HANDLER**
 	Path to a programme.
 	Must be a canonical.
 	Should run the file pointed to by the environment variable **PATH_TRANSLATED**.
-	No operands or options are passed.
+	Given neither operands nor options.
+
+**DATA_FORMAT**
+	How to format timestamps in error messages.
+	See strftime(3) for details.
 
 **SCRIPT_MIN_UID**
 	A user ID (UID).
@@ -67,12 +71,12 @@ before compilation.
 **WWW_USER**
 	A username.
 	Only processes running as this user may call **cgi-runas**.
-	Should typically be set to the user your webserver runs as.
+	Should be set to the user your webserver runs as.
 
 **WWW_GROUP**
 	A groupname.
 	Only processes running as this group may call **cgi-runas**.
-	Should typically be set to the group your webserver runs as.
+	Should be set to the group your webserver runs as.
 
 Just in case your C is rusty: `#define` statements are *not* terminated with
 a semicolon; strings must be enclosed in double quotes ("..."), *not* single
@@ -88,10 +92,11 @@ ENVIRONMENT
 	Only scripts in this directory are executed.
 
 **PATH**
-	A search path. Overwritten before **CGI_HANDLER** is called.
+	A search path.
+	Overwritten with a safe value before **CGI_HANDLER** is called.
 
 **PATH_TRANSLATED**
-	Path of the script that should be run.
+	Path of the script to run.
 	Must be a canonical.
 
 
@@ -108,9 +113,9 @@ and weigh the benefits of using **cgi-runas** against the risks.
 Philosophy
 ----------
 
-**cgi-runas** aims to comply with POSIX.1-2018 and existing best practices,
-tries to improve upon prior art, above all, Apache's suExec, and tries
-to be secure even in the face of user errors.
+**cgi-runas** aims to comply with POSIX.1-2018 and extant best practices,
+to improve upon prior art, above all, Apache's suExec, and to be secure
+even in the face of user errors.
 
 It implements most of suExec's safeguards, the exception being calling
 **ufork** on systems that support it, but protects more thoroughly
@@ -144,10 +149,10 @@ Configuration checks:
 8. Are its set-UID and set-GID bits unset?
 9. And *is* it world-executable?
 10. Are **SCRIPT_MIN_UID** and **SCRIPT_MAX_UID** set to a UID
-   greater than 0 and smaller than or equal to the system's **MAX_UID**?
+    greater than 0 and smaller than or equal to the system's **MAX_UID**?
 11. Is **SCRIPT_MIN_UID** smaller than **SCRIPT_MAX_UID**?
 12. Are **SCRIPT_MIN_GID** and **SCRIPT_MAX_GID** set to a UID
-   greater than 0 and smaller than or equal to the system's **MAX_GID**?
+    greater than 0 and smaller than or equal to the system's **MAX_GID**?
 13. Is **SCRIPT_MIN_GID** smaller than **SCRIPT_MAX_GID**?
 14. Is **SCRIPT_BASE_DIR** set?
 15. Does that file exist?
@@ -232,16 +237,15 @@ Transition checks:
 CGI
 ---
 
-You should also have a look at the [security issues that come with running
-PHP as a CGI handler](https://www.php.net/manual/en/security.cgi-bin.php).
+You should also consider the `security issues that running PHP as a CGI
+handler <https://www.php.net/manual/en/security.cgi-bin.php>`_ implies.
 
 
 DIAGNOSTICS
 ===========
 
 **cgi-runas** prints errors, and only errors, to STDERR.
-If you want to log them---and you do---, then
-you need to set up the webserver so that it does that.
+You need to set up the webserver so that it logs them.
 
 
 EXIT STATUSES
