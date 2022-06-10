@@ -3,6 +3,10 @@
 // No operands or options are passed.
 #define CGI_HANDLER "/usr/lib/cgi-bin/php"
 
+// How to format timestamps in error messages.
+// See strftime(3) for details.
+#define DATE_FORMAT "%b %e %T"
+
 // A user ID (UID).
 // Script files are not executed if their UID is smaller than this UID.
 // Low UIDs are typically used for system accounts.
@@ -38,10 +42,10 @@
 
 // A username.
 // Only processes running as this user may call cgi-runas.
-// Should typically be set to the user your webserver runs as.
+// Should be set to the user your webserver runs as.
 #define WWW_USER "www-data"
 
 // A groupname.
 // Only processes running as this group may call cgi-runas.
-// Should typically be set to the group your webserver runs as.
+// Should be set to the group your webserver runs as.
 #define WWW_GROUP "www-data"
