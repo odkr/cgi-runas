@@ -1,87 +1,47 @@
-// Scripts outside of this directory are rejected.
-const char BASE_DIR[] = "/home";
+// Absolute path to a programme.
+// Should run the file pointed to by the environment variable PATH_TRANSLATED.
+// No operands or options are passed.
+#define CGI_HANDLER "/usr/lib/cgi-bin/php"
 
-// The absolute path of the CGI handler to run scripts with.
-const char CGI_HANDLER[] = "/usr/lib/cgi-bin/php";
+// A user ID (UID).
+// Script files are not executed if their UID is smaller than this UID.
+// Low UIDs are typically used for system accounts.
+#define SCRIPT_MIN_UID 1000
 
-// A list of safe environment variables.
-// The list must be terminated with `NULL`.
-// The variable names below have been adopted from Apache's suExec.
-const char *const ENV_VARS[] =
-{
-	// If you do not terminate variable names with a "=",
-	// they match the begining of the variable name.
-	"HTTP_",
-	"SSL_",
+// A group ID (GID).
+// Script files are not executed if their GID is smaller than this GID.
+// Low GIDs are typically used for system accounts.
+#define SCRIPT_MIN_GID 1000
 
-	// If you terminate variable names with a "=",
-	// they match the whole variable name.
-	"AUTH_TYPE=",
-	"CONTENT_LENGTH=",
-	"CONTENT_TYPE=",
-	"CONTEXT_DOCUMENT_ROOT=",
-	"CONTEXT_PREFIX=",
-	"DATE_GMT=",
-	"DATE_LOCAL=",
-	"DOCUMENT_NAME=",
-	"DOCUMENT_PATH_INFO=",
-	"DOCUMENT_ROOT=",
-	"DOCUMENT_URI=",
-	"GATEWAY_INTERFACE=",
-	"HTTPS=",
-	"LAST_MODIFIED=",
-	"PATH_INFO=",
-	"PATH_TRANSLATED=",
-	"QUERY_STRING=",
-	"QUERY_STRING_UNESCAPED=",
-	"REMOTE_ADDR=",
-	"REMOTE_HOST=",
-	"REMOTE_IDENT=",
-	"REMOTE_PORT=",
-	"REMOTE_USER=",
-	"REDIRECT_ERROR_NOTES=",
-	"REDIRECT_HANDLER=",
-	"REDIRECT_QUERY_STRING=",
-	"REDIRECT_REMOTE_USER=",
-	"REDIRECT_SCRIPT_FILENAME=",
-	"REDIRECT_STATUS=",
-	"REDIRECT_URL=",
-	"REQUEST_METHOD=",
-	"REQUEST_URI=",
-	"REQUEST_SCHEME=",
-	"SCRIPT_FILENAME=",
-	"SCRIPT_NAME=",
-	"SCRIPT_URI=",
-	"SCRIPT_URL=",
-	"SERVER_ADMIN=",
-	"SERVER_NAME=",
-	"SERVER_ADDR=",
-	"SERVER_PORT=",
-	"SERVER_PROTOCOL=",
-	"SERVER_SIGNATURE=",
-	"SERVER_SOFTWARE=",
-	"UNIQUE_ID=",
-	"USER_NAME=",
-	"TZ=",
+// A user ID (UID).
+// Script files are not executed if their UID is greater than this UID.
+// High UIDs may be used for the 'nobody' user and daemons (e.g., libvirtd).
+#define SCRIPT_MAX_UID 50000
 
-	// Terminator. DO *NOT* REMOVE!
-	NULL
-};
+// A group ID (GID).
+// Script files are not executed if their GID is greater than this GID.
+// High GIDs may be used for the 'nogroup' group and daemons (e.g., libvirtd).
+#define SCRIPT_MAX_GID 50000
 
-// Scripts owned by users with a UID lower than this one are rejected.
-const uid_t MIN_UID = 1000;
+// A directory.
+// Only scripts within that directory are run.
+#define SCRIPT_BASE_DIR "/home"
 
-// Scripts owned by groups with a GID lower than this one are rejected.
-const gid_t MIN_GID = 1000;
+// A filename suffix, including the leading dot.
+// Scripts are only run if their filename ends with this suffix.
+#define SCRIPT_SUFFIX ".php"
 
-// What to set the `PATH` environment variable to.
-const char PATH[] = "/usr/bin:/bin";
+// A colon-separated list of directories.
+// Overwrites the PATH environment variable.
+// Should be set to a list of secure directories.
+#define SECURE_PATH "/usr/bin:/bin"
 
-// Scripts the filename of which does not end with this suffix are rejected.
-const char SCRIPT_SUFFIX[] = ".php";
+// A username.
+// Only processes running as this user may call cgi-runas.
+// Should typically be set to the user your webserver runs as.
+#define WWW_USER "www-data"
 
-// The user the web server runs as.
-const char WWW_USER[] = "www-data";
-
-// The group the web server runs as.
-const char WWW_GROUP[] = "www-data";
+// A groupname.
+// Only processes running as this group may call cgi-runas.
+// Should typically be set to the group your webserver runs as.
+#define WWW_GROUP "www-data"
