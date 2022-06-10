@@ -45,6 +45,62 @@
  */
 
 /*
+ * Constant: EX_USAGE
+ *
+ * Status to exit with if the user made an error.
+ * Conforms to 4.4BSD.
+ */
+#define EX_USAGE 64
+
+/*
+ * Constant: EX_NOUSER
+ *
+ * Status to exit with if a user does not exist.
+ * Conforms to 4.4BSD.
+ */
+#define EX_NOUSER 67
+
+/*
+ * Constant: EX_UNAVAILABLE
+ *
+ * Status to exit with if no other status matches.
+ * Conforms to 4.4BSD.
+ */
+#define EX_UNAVAILABLE 69
+
+/*
+ * Constant: EX_SOFTWARE
+ *
+ * Status to exit with if the programmer made an error.
+ * Conforms to 4.4BSD.
+ */
+#define EX_SOFTWARE 70
+
+/*
+ * Constant: EX_OSERR
+ *
+ * Status to exit with an operating system error occurs.
+ * Conforms to 4.4BSD.
+ */
+#define EX_OSERR 71
+
+/*
+ * Constant: EX_NOPERM
+ *
+ * Status to exit with an operating system error occurs.
+ * Conforms to 4.4BSD.
+ */
+#define EX_NOPERM 77
+
+/*
+ * Constant: EX_CONFIG
+ *
+ * Status to exit with an the user misconfigured something.
+ * Conforms to 4.4BSD.
+ */
+#define EX_CONFIG 78
+
+/*
  * Constant: CR_SELF_EXE
  *
  * `/proc/self/exe`. Needed to locate the executable.
@@ -61,17 +117,94 @@
 #define CR_PATH_MAX 256
 
 /*
- * Constant: SECURE_PATH_MAX
+ * Constant: CR_SECURE_PATH_MAX
  *
  * The maximum length for `SECURE_PATH`.
  */
-#define SECURE_PATH_MAX 1024
+#define CR_SECURE_PATH_MAX 1024
 
 
 /*
  * MACROS
  * ======
  */
+
+/*
+ * Macro: ERR_USAGE
+ *
+ * Raise a usage error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_USAGE(...) panic(EX_USAGE, __VA_ARGS__)
+
+/*
+ * Macro: ERR_NOUSER
+ *
+ * Raise a no-such-user error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_NOUSER(...) panic(EX_NOUSER, __VA_ARGS__)
+
+/*
+ * Macro: ERR_UNAVAILABLE
+ *
+ * Raise a generic error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_UNAVAILABLE(...) panic(EX_UNAVAILABLE, __VA_ARGS__)
+
+/*
+ * Macro: ERR_SOFTWARE
+ *
+ * Raise a software error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_SOFTWARE(...) panic(EX_SOFTWARE, __VA_ARGS__)
+
+/*
+ * Macro: ERR_OSERR
+ *
+ * Raise an operating system error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_OSERR(...) panic(EX_OSERR, __VA_ARGS__)
+
+/*
+ * Macro: ERR_NOPERM
+ *
+ * Raise a permission error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_NOPERM(...) panic(EX_NOPERM, __VA_ARGS__)
+
+/*
+ * Macro: ERR_CONFIG
+ *
+ * Raise a configuration error.
+ *
+ * Arguments:
+ *
+ *    See <panic>.
+ */
+#define ERR_CONFIG(...) panic(EX_CONFIG, __VA_ARGS__)
 
 /*
  * Macro: STREQ
@@ -337,7 +470,8 @@ void panic (const int status, const char *message, ...) {
  *
  * Caveats:
  *
- *    The list is modified inplace and the pointer to the list is moved to the next item!
+ *    The list is modified inplace and
+ *    the pointer to the list is moved to the next item!
  *
  * Example:
  *
@@ -353,13 +487,13 @@ void panic (const int status, const char *message, ...) {
  *    }
  *    =========
  */
-int push (list_t **head, void *item) {
-	if (!head) return 0;
+int push (list_t **list, void *item) {
+	if (!list) return 0;
 	list_t *next = malloc(sizeof(list_t));
 	if (!next) return 0;
-	next->prev = *head;
+	next->prev = *list;
 	next->data = item;
-	*head = next;
+	*list = next;
 	return 1;
 }
 
@@ -393,8 +527,8 @@ int push (list_t **head, void *item) {
  *    === C ===
  *    list_t *dirs = *dirnames("/some/dir", NULL);
  *    if (!dirs) {
- *        if (errno) panic(71, strerror(errno));
- *        else panic(78, "list head is NULL, this is a bug.")
+ *        if (errno) ERR_OSERR(strerror(errno));
+ *        else ERR_SOFTWARE("encountered null pointer to list.")
  *    }
  *    list_t *item = dirs;
  *    while (item) {
@@ -428,7 +562,8 @@ list_t *dir_names (char *start, char *stop) {
 /*
  * Function: path_max
  *
- * Get maximum length of a path on the filesystem that a file is located on.
+ * Get maximum length of a path on the filesystem
+ * that a file is located on.
  * 
  *
  * Argument:
@@ -451,22 +586,23 @@ list_t *dir_names (char *start, char *stop) {
  *
  * Caveats:
  *
- *    POSIX allows for `PATH_MAX` and `pathconf(<path>, _PC_PATH_MAX)` to be
- *    indeterminate. Therefore, `CR_PATH_MAX` defines a fallback.
+ *    POSIX allows for `PATH_MAX` and `pathconf(<path>, _PC_PATH_MAX)`
+ *    to be indeterminate. `CR_PATH_MAX` defines a fallback.
  *
- *    Moreover, there is confusion about what `pathconf(<path>, _PC_PATH_MAX)`
- *    should return. POSIX.1-2008 implies that it should return the "actual
- *    value of [PATH_MAX] at runtime". This is the behaviour implemented in
- *    glibc. But the Linux manual says that `pathconf(<path>, _PC_PATH_MAX)`
- *    returns "the maximum length of a relative pathname when [the given]
- *    path [...] is the current working directory". That being so, `path_max`
- *    may be inaccurate if the current working directory is not the root
- *    directory.
+ *    Moreover, there is confusion about what `pathconf(<path>,
+ *    _PC_PATH_MAX)` should return. POSIX.1-2008 implies that it should
+ *    return the "actual value of [PATH_MAX] at runtime". This is the
+ *    behaviour implemented in glibc. But the Linux manual says that
+ *    `pathconf(<path>, _PC_PATH_MAX)` returns "the maximum length of a
+ *    relative pathname when [the given] path [...] is the current
+ *    working directory". That being so, `path_max` may be inaccurate
+ *    if the current working directory is not the root directory.
  *
- *    Also, most operating systems only *partly* enforce `PATH_MAX`, that is,
- *    though some system calls may error or fail silently if they encouter
- *    a path that longer than `PATH_MAX` or `pathconf(<path>, _PC_PATH_MAX)`,
- *    they may still allow the user to create such paths.
+ *    Also, most operating systems only *partly* enforce `PATH_MAX`,
+ *    that is, though some system calls may error or fail silently if
+ *    they encouter a path that longer than `PATH_MAX` or
+ *    `pathconf(<path>, _PC_PATH_MAX)`, others won't, and the system
+ *    may still allow the user to create such paths.
  *
  * See also:
  *
@@ -523,27 +659,28 @@ char *realpath_f (char *path) {
 
 	max = path_max(path);
 	if (max == -1)
-		panic(69, "stat %s: %s", path, strerror(errno));
+		ERR_UNAVAILABLE("stat %s: %s", path, strerror(errno));
 
 	len = strlen(path);
 	if (len == 0)
-		panic(78, "got the empty string as path.");
+		ERR_SOFTWARE("got the empty string as path.");
 	if (len > max)
-		panic(69, "%s: path is too long.", path);
+		ERR_UNAVAILABLE("%s: path is too long.", path);
 
 	char *restrict real = realpath(path, NULL);
 	if (!real)
-		panic(69, "realpath %s: %s.", path, strerror(errno));
+		ERR_UNAVAILABLE("realpath %s: %s.",
+		                path, strerror(errno));
 
 	max = path_max(real);
 	if (max == -1)
-		panic(69, "stat %s: %s", path, strerror(errno));
+		ERR_UNAVAILABLE("stat %s: %s", path, strerror(errno));
 	
 	len = strlen(real);
 	if (len == 0)
-		panic(69, "%s: canonical path is the empty string.", path);
+		ERR_UNAVAILABLE("%s: canonical path is empty.", path);
 	if (len > max)
-		panic(69, "%s: canonical path is too long.", path);
+		ERR_UNAVAILABLE("%s: canonical path too long.", path);
 
 	return real;
 }
@@ -571,8 +708,8 @@ char *realpath_f (char *path) {
 void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 	list_t *dirs = dir_names(start, stop);
 	if (!dirs) {
-		if (errno) panic(71, strerror(errno));
-		else panic(78, "encountered null pointer to list.");
+		if (errno) ERR_OSERR(strerror(errno));
+		else ERR_SOFTWARE("encountered null pointer to list.");
 	}
 
 	list_t *item = dirs;
@@ -582,13 +719,15 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 		list_t *prev = item->prev;
 
 		if (stat(dir, &dir_fs) != 0)
-			panic(69, "%s: %s.", dir, strerror(errno));
+			ERR_UNAVAILABLE("%s: %s.", dir, strerror(errno));
 		if (dir_fs.st_uid != uid)
-			panic(69, "%s: not owned by UID %d.", dir, uid);
+			ERR_UNAVAILABLE("%s: not owned by UID %d.",
+					dir, uid);
 		if (dir_fs.st_uid != gid)
-			panic(69, "%s: not owned by GID %d.", dir, gid);
+			ERR_UNAVAILABLE("%s: not owned by GID %d.",
+			                dir, gid);
 		if (dir_fs.st_mode & S_IWOTH)
-			panic(69, "%s: is world-writable.", dir);
+			ERR_UNAVAILABLE("%s: is world-writable.", dir);
 
 		free(dir);
 		free(item);
@@ -611,7 +750,7 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 void is_subdir_f (char *sub, char *super) {
 	char sep = sub[strlen(super)];
 	if (STRNOSTARTW(sub, super) || (sep != '/' && sep != '\0'))
-		panic(69, "%s: not in %s.", sub, super);
+		ERR_UNAVAILABLE("%s: not in %s.", sub, super);
 }
 
 /*
@@ -703,8 +842,8 @@ int main (void) {
 	// Words of wisdom from the authors of suexec.c:
 	//
 	// > While cleaning the environment, the environment should be clean.
-	// > (E.g. malloc() may get the name of a file for writing debugging info.
-	// > Bad news if MALLOC_DEBUG_FILE is set to /etc/passwd.)
+	// > (E.g. malloc() may get the name of a file for writing debugging
+	// > info. Bad news if MALLOC_DEBUG_FILE is set to /etc/passwd.)
 
 	char **env_p = environ;
 	char *empty = NULL;
@@ -719,7 +858,7 @@ int main (void) {
 	
 	// Needed for `path_max` to be accurate.
 	if (chdir("/") != 0)
-		panic(69, "chdir /: %s", strerror(errno));
+		ERR_UNAVAILABLE("chdir /: %s", strerror(errno));
 
 	/*
 	 * Self-discovery
@@ -768,7 +907,8 @@ int main (void) {
 				sep[0] = '\0';
 				
 				if (setenv(*env_p, val, 0) != 0)
-					panic(69, "failed to set %s: %s.", env_p, strerror(errno));
+					ERR_UNAVAILABLE("failed to set %s: %s.",
+					                env_p, strerror(errno));
 				goto next;
 			}
 			*safe++;
@@ -778,7 +918,7 @@ int main (void) {
 	}
 
 	if (setenv("PATH", SECURE_PATH, 1) != 0)
-		panic(69, "failed to set PATH: %s.", strerror(errno));
+		ERR_UNAVAILABLE("failed to set PATH: %s.", strerror(errno));
 
 
 	/*
@@ -788,156 +928,176 @@ int main (void) {
 
 	#ifdef CGI_HANDLER
 		if (STREQ(CGI_HANDLER, ""))
-			panic(64, "CGI_HANDLER: is the empty string.");
+			ERR_CONFIG("CGI_HANDLER: is the empty string.");
 
 		char *restrict cgi_handler = realpath_f(CGI_HANDLER);
 		if (STRNE(CGI_HANDLER, cgi_handler))
-			panic(69, "CGI_HANDLER: %s: not a canonical path.", CGI_HANDLER);
+			ERR_CONFIG("CGI_HANDLER: %s: not a canonical path.",
+			           CGI_HANDLER);
 		free(cgi_handler); cgi_handler = NULL;
 		
 		is_excl_owner_f(0, 0, CGI_HANDLER, NULL);
 
 		struct stat cgi_handler_fs;
 		if (stat(CGI_HANDLER, &cgi_handler_fs) != 0)
-			panic(69, "%s: %s.", CGI_HANDLER, strerror(errno));
+			ERR_UNAVAILABLE("%s: %s.",
+			                CGI_HANDLER, strerror(errno));
 
-		if (cgi_handler_fs.st_uid != 0)
-			panic(69, "CGI_HANDLER: %s: UID not 0.", CGI_HANDLER);
-		if (cgi_handler_fs.st_gid !=0)
-			panic(69, "CGI_HANDLER: %s: GID not 0.", CGI_HANDLER);
-		if (cgi_handler_fs.st_mode & S_IWOTH)
-			panic(69, "CGI_HANDLER: %s: is world-writable.", CGI_HANDLER);
 		if (!(cgi_handler_fs.st_mode & S_ISREG))
-			panic(69, "CGI_HANDLER: %s: not a regular file.", CGI_HANDLER);
-		if (!(cgi_handler_fs.st_mode & S_IXOTH))
-			panic(69, "CGI_HANDLER: %s: not world-executable.", CGI_HANDLER);
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: not a regular file.",
+			                CGI_HANDLER);
+		if (cgi_handler_fs.st_uid != 0)
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: UID not 0.",
+			                CGI_HANDLER);
+		if (cgi_handler_fs.st_gid !=0)
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: GID not 0.",
+			                CGI_HANDLER);
+		if (cgi_handler_fs.st_mode & S_IWOTH)
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: is world-writable.",
+			                CGI_HANDLER);
 		if (cgi_handler_fs.st_mode & S_ISUID)
-			panic(69, "CGI_HANDLER: %s: has its set-UID-bit set.", CGI_HANDLER);
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: has its set-UID-bit set.",
+			                CGI_HANDLER);
 		if (cgi_handler_fs.st_mode & S_ISGID)
-			panic(69, "CGI_HANDLER: %s: has its set-GID-bit set.", CGI_HANDLER);
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: has its set-GID-bit set.",
+			                CGI_HANDLER);
+		if (!(cgi_handler_fs.st_mode & S_IXOTH))
+			ERR_UNAVAILABLE("CGI_HANDLER: %s: not world-executable.",
+			                CGI_HANDLER);
 	#else
-		panic(64, "CGI_HANDLER: not defined.")
+		ERR_USAGE("CGI_HANDLER: not defined.")
 	#endif
 			
-	#ifdef MIN_EFFECTIVE_UID
-		if (MIN_EFFECTIVE_UID < 1)
-			panic(64, "MIN_EFFECTIVE_UID: must be greater than 0.");
+	#ifdef SCRIPT_MIN_UID
+		if (SCRIPT_MIN_UID < 1)
+			ERR_CONFIG("SCRIPT_MIN_UID: must be greater than 0.");
 		#ifdef UID_MAX
-			if (MIN_EFFECTIVE_UID > UID_MAX)
-				panic(64, "MIN_EFFECTIVE_UID: must not be greater than %d.", UID_MAX);
+			if (SCRIPT_MIN_UID > UID_MAX)
+				ERR_CONFIG("SCRIPT_MIN_UID: must not be greater than %d.",
+				           UID_MAX);
 		#endif
 					
-		#ifdef MAX_EFFECTIVE_UID
-			if (MIN_EFFECTIVE_GID >= MAX_EFFECTIVE_UID)
-				panic(64, "MIN_EFFECTIVE_GID: must be smaller than MAX_EFFECTIVE_UID.");
+		#ifdef SCRIPT_MAX_UID
+			if (SCRIPT_MIN_GID >= SCRIPT_MAX_UID)
+				ERR_CONFIG("SCRIPT_MIN_GID: must be smaller than SCRIPT_MAX_UID.");
 		#endif
 	#else
-		panic(64, "MIN_EFFECTIVE_UID: not defined.")
+		ERR_USAGE("SCRIPT_MIN_UID: not defined.")
 	#endif
 
-	#ifdef MIN_EFFECTIVE_GID
-		if (MIN_EFFECTIVE_GID < 1)
-			panic(64, "MIN_EFFECTIVE_GID: must be greater than 0.");
+	#ifdef SCRIPT_MIN_GID
+		if (SCRIPT_MIN_GID < 1)
+			ERR_CONFIG("SCRIPT_MIN_GID: must be greater than 0.");
 		#ifdef GID_MAX
-			if (MIN_EFFECTIVE_GID > GID_MAX)
-				panic(64, "MIN_EFFECTIVE_GID: must not be greater than %d.", GID_MAX);
+			if (SCRIPT_MIN_GID > GID_MAX)
+				ERR_CONFIG("SCRIPT_MIN_GID: must not be greater than %d.",
+				           GID_MAX);
 		#endif
 							
-		#ifdef MAX_EFFECTIVE_GID
-			if (MIN_EFFECTIVE_GID >= MAX_EFFECTIVE_GID)
-				panic(64, "MIN_EFFECTIVE_GID: must be smaller than MAX_EFFECTIVE_GID.");
+		#ifdef SCRIPT_MAX_GID
+			if (SCRIPT_MIN_GID >= SCRIPT_MAX_GID)
+				ERR_CONFIG("SCRIPT_MIN_GID: must be smaller than SCRIPT_MAX_GID.");
 		#endif
 	#else
-		panic(64, "MIN_EFFECTIVE_GID: not defined.")
+		ERR_CONFIG("SCRIPT_MIN_GID: not defined.")
 	#endif
 
-	#ifdef MAX_EFFECTIVE_UID
-		if (MAX_EFFECTIVE_UID < 1)
-			panic(64, "MAX_EFFECTIVE_UID: must be greater than 0.");
+	#ifdef SCRIPT_MAX_UID
+		if (SCRIPT_MAX_UID < 1)
+			ERR_CONFIG("SCRIPT_MAX_UID: must be greater than 0.");
 		#ifdef UID_MAX
-			if (MAX_EFFECTIVE_UID > UID_MAX)
-				panic(64, "MAX_EFFECTIVE_UID: must not be greater than %d.", UID_MAX);
+			if (SCRIPT_MAX_UID > UID_MAX)
+				ERR_CONFIG("SCRIPT_MAX_UID: must not be greater than %d.",
+				           UID_MAX);
 		#endif
 	#else
-		panic(64, "MAX_EFFECTIVE_UID: not defined.")
+		ERR_CONFIG("SCRIPT_MAX_UID: not defined.")
 	#endif
 
-	#ifdef MAX_EFFECTIVE_GID
-		if (MAX_EFFECTIVE_GID < 1)
-			panic(64, "MAX_EFFECTIVE_GID: must be greater than 0.");
+	#ifdef SCRIPT_MAX_GID
+		if (SCRIPT_MAX_GID < 1)
+			ERR_CONFIG("SCRIPT_MAX_GID: must be greater than 0.");
 		#ifdef GID_MAX
-			if (MAX_EFFECTIVE_GID > GID_MAX)
-				panic(64, "MAX_EFFECTIVE_GID: must not be greater than %d.", GID_MAX);
+			if (SCRIPT_MAX_GID > GID_MAX)
+				ERR_CONFIG("SCRIPT_MAX_GID: must not be greater than %d.",
+				           GID_MAX);
 		#endif
 	#else
-		panic(64, "MAX_EFFECTIVE_GID: not defined.")
+		ERR_CONFIG("SCRIPT_MAX_GID: not defined.")
 	#endif
 
 	#ifdef SCRIPT_BASE_DIR
 		if (STREQ(SCRIPT_BASE_DIR, ""))
-			panic(64, "SCRIPT_BASE_DIR: is the empty string.");
+			ERR_CONFIG("SCRIPT_BASE_DIR: is the empty string.");
 
 		char *restrict script_base_dir = realpath_f(SCRIPT_BASE_DIR);
 		if (STRNE(SCRIPT_BASE_DIR, script_base_dir))
-			panic(69, "%s: not a canonical path.", SCRIPT_BASE_DIR);
+			ERR_CONFIG("%s: not a canonical path.",
+			           SCRIPT_BASE_DIR);
 		free(script_base_dir); script_base_dir = NULL;
 	
 		is_excl_owner_f(0, 0, SCRIPT_BASE_DIR, NULL);
 
 		struct stat script_base_dir_fs;
 		if (stat(SCRIPT_BASE_DIR, &script_base_dir_fs) != 0)
-			panic(69, "%s: %s.", SCRIPT_BASE_DIR, strerror(errno));
+			ERR_UNAVAILABLE("%s: %s.",
+			                SCRIPT_BASE_DIR, strerror(errno));
 
+		if (!(script_base_dir_fs.st_mode & S_ISDIR))
+			ERR_UNAVAILABLE("%s: not a directory.",
+			                SCRIPT_BASE_DIR);
 		if (script_base_dir_fs.st_uid != 0)
-			panic(69, "%s: UID not 0.", SCRIPT_BASE_DIR);
+			ERR_UNAVAILABLE("%s: UID not 0.",
+			                SCRIPT_BASE_DIR);
 		if (script_base_dir_fs.st_gid !=0)
-			panic(69, "%s: GID not 0.", SCRIPT_BASE_DIR);
+			ERR_UNAVAILABLE("%s: GID not 0.",
+			                SCRIPT_BASE_DIR);
 		if (script_base_dir_fs.st_mode & S_IWOTH)
-			panic(69, "%s: is world-writable.", SCRIPT_BASE_DIR);
-		// if (!(script_base_dir_fs.st_mode & S_ISDIR))
-		// 	panic(69, "%s: not a directory.", SCRIPT_BASE_DIR);
+			ERR_UNAVAILABLE("%s: is world-writable.",
+			                SCRIPT_BASE_DIR);
 		if (!(script_base_dir_fs.st_mode & S_IXOTH))
-			panic(69, "%s: is not world-executable.", SCRIPT_BASE_DIR);
+			ERR_UNAVAILABLE("%s: is not world-executable.",
+			                SCRIPT_BASE_DIR);
 	#else
-		panic(64, "SCRIPT_BASE_DIR: not defined.")
+		ERR_CONFIG("SCRIPT_BASE_DIR: not defined.")
 	#endif
 
 	#ifdef SCRIPT_SUFFIX
 		if (STREQ(SCRIPT_SUFFIX, ""))
-			panic(64, "SCRIPT_SUFFIX: is the empty string.");
+			ERR_USAGE("SCRIPT_SUFFIX: is the empty string.");
 	#else
-		panic(64, "SCRIPT_SUFFIX: not defined.")
+		ERR_CONFIG("SCRIPT_SUFFIX: not defined.")
 	#endif
 
 	#ifdef SECURE_PATH
-		if (strlen(SECURE_PATH) > SECURE_PATH_MAX)
-			panic(64, "SECURE_PATH: is too long.");
+		if (strlen(SECURE_PATH) > CR_SECURE_PATH_MAX)
+			ERR_USAGE("SECURE_PATH: is too long.");
 	#else
-		panic(64, "SECURE_PATH: not defined.")
+		ERR_CONFIG("SECURE_PATH: not defined.")
 	#endif
 
 	#ifdef WWW_USER
 		if (STREQ(WWW_USER, ""))
-			panic(64, "WWW_USER: is the empty string.");
+			ERR_CONFIG("WWW_USER: is the empty string.");
 		if (is_portable_name(WWW_USER) != 0)
-			panic(64, "%s: invalid username.", WWW_USER);
+			ERR_CONFIG("%s: invalid username.", WWW_USER);
 		pwd = getpwnam(WWW_USER); 
 		if (!pwd)
-			panic(67, "%s: no such user.", WWW_USER);
+			ERR_NOUSER(, "%s: no such user.", WWW_USER);
 	#else
-		panic(64, "WWW_USER: not defined.")
+		ERR_CONFIG("WWW_USER: not defined.")
 	#endif
 
 	#ifdef WWW_GROUP
 		if (STREQ(WWW_GROUP, ""))
-			panic(64, "WWW_GROUP: is the empty string.");
+			ERR_CONFIG("WWW_GROUP: is the empty string.");
 		if (is_portable_name(WWW_GROUP) != 0)
-			panic(64, "%s: invalid username.", WWW_GROUP);
+			ERR_CONFIG("%s: invalid username.", WWW_GROUP);
 		grp = getgrnam(WWW_GROUP);
 		if (!grp)
-			panic(67, "%s: no such group.", WWW_GROUP);
+			ERR_NOUSER(, "%s: no such group.", WWW_GROUP);
 	#else
-		panic(64, "WWW_GROUP: not defined.")
+		ERR_CONFIG("WWW_GROUP: not defined.")
 	#endif
 
 	// Needed later.
@@ -961,20 +1121,16 @@ int main (void) {
 
 	struct stat prog_fs;
 	if (stat(prog_path, &prog_fs) != 0)
-		panic(69, "%s: %s.", prog_path, strerror(errno));
+		ERR_UNAVAILABLE("%s: %s.", prog_path, strerror(errno));
 
 	if (prog_fs.st_uid != 0)
-		panic(69, "%s: UID not 0.", prog_path);
+		ERR_UNAVAILABLE("%s: UID not 0.", prog_path);
 	if (prog_fs.st_gid != www_gid)
-		panic(69, "%s: GID not %d.", prog_path, www_gid);
-	if (prog_fs.st_mode & S_IWGRP)
-		panic(69, "%s: is group-writable.", prog_path);
+		ERR_UNAVAILABLE("%s: GID not %d.", prog_path, www_gid);
 	if (prog_fs.st_mode & S_IWOTH)
-		panic(69, "%s: is world-writable.", prog_path);
+		ERR_UNAVAILABLE("%s: is world-writable.", prog_path);
 	if (prog_fs.st_mode & S_IXOTH)
-		panic(69, "%s: is world-executable.", prog_path);
-	if (prog_fs.st_mode & S_ISGID)
-		panic(69, "%s: has its set-GID-bit set.", prog_path);
+		ERR_UNAVAILABLE("%s: is world-executable.", prog_path);
 
 	/*
 	 * Get script's path
@@ -984,13 +1140,14 @@ int main (void) {
 	char *path_translated = NULL;
 	path_translated = getenv("PATH_TRANSLATED");
 	if (path_translated == NULL)
-		panic(64, "PATH_TRANSLATED: not set.");
+		ERR_USAGE("PATH_TRANSLATED: not set.");
 	if (STREQ(path_translated, ""))
-		panic(64, "PATH_TRANSLATED: is empty.");
+		ERR_USAGE("PATH_TRANSLATED: is empty.");
 	
 	char *restrict script_path = realpath_f(path_translated);
 	if (STRNE(path_translated, script_path))
-		panic(69, "PATH_TRANSLATED: %s: not a canonical path.", path_translated);
+		ERR_UNAVAILABLE("PATH_TRANSLATED: %s: not a canonical path.",
+		                path_translated);
 
 
 	/*
@@ -1000,29 +1157,39 @@ int main (void) {
 
 	struct stat script_fs;
 	if (stat(script_path, &script_fs) != 0)
-		panic(69, "%s: %s.", script_path, strerror(errno));
+		ERR_UNAVAILABLE("%s: %s.", script_path, strerror(errno));
 
 	if (script_fs.st_uid == 0)
-		panic(69, "%s: UID is 0.", script_path);
+		ERR_UNAVAILABLE("%s: UID is 0.", script_path);
 	if (script_fs.st_gid == 0)
-		panic(69, "%s: GID is 0.", script_path);
-	if (script_fs.st_uid < MIN_EFFECTIVE_UID || script_fs.st_uid > MAX_EFFECTIVE_UID)
-		panic(69, "%s: UID is privileged.", script_path);
-	if (script_fs.st_gid < MIN_EFFECTIVE_GID || script_fs.st_uid > MAX_EFFECTIVE_GID)
-		panic(69, "%s: GID is privileged.", script_path);
+		ERR_UNAVAILABLE("%s: GID is 0.", script_path);
+	if (
+		script_fs.st_uid < SCRIPT_MIN_UID ||
+		script_fs.st_uid > SCRIPT_MAX_UID
+	)
+		ERR_UNAVAILABLE("%s: UID is privileged.", script_path);
+	if (
+		script_fs.st_gid < SCRIPT_MIN_GID ||
+		script_fs.st_uid > SCRIPT_MAX_GID
+	)
+		ERR_UNAVAILABLE("%s: GID is privileged.", script_path);
 
 	pwd = getpwuid(script_fs.st_uid);
 	if (!pwd)
-		panic(67, "%s's UID %d: no such user.", script_path, script_fs.st_uid);
+		ERR_OSERR("%s: UID %d: no such user.",
+		          script_path, script_fs.st_uid);
 	if (is_portable_name(pwd->pw_name) != 0)
-		panic(67, "%s: invalid username.", pwd->pw_name);
+		ERR_UNAVAILABLE("%s: invalid username.", pwd->pw_name);
+
 	grp = getgrgid(script_fs.st_gid);
 	if (!grp)
-		panic(67, "%s's GID %d: no such group.", script_path, script_fs.st_uid);
+		ERR_OSERR("%s: GID %d: no such group.",
+		          script_path, script_fs.st_uid);
 	if (is_portable_name(grp->gr_name) != 0)
-		panic(67, "%s: invalid groupname.", grp->gr_name);
+		ERR_UNAVAILABLE("%s: invalid groupname.", grp->gr_name);
 	if (script_fs.st_gid != pwd->pw_gid)
-		panic(67, "%s's GID %d: not %s's primary group.", script_path, script_fs.st_gid, pwd->pw_name);
+		ERR_UNAVAILABLE("%s: GID %d: not %s's primary group.",
+		                script_path, script_fs.st_gid, pwd->pw_name);
 
 	pwd = NULL;
 	grp = NULL;
@@ -1037,13 +1204,17 @@ int main (void) {
 
 	const gid_t groups[] = {};
 	if (setgroups(0, groups) != 0)
-		panic(69, "setgroups: %s.", strerror(errno));
+		ERR_UNAVAILABLE("setgroups: %s.",
+		                strerror(errno));
 	if (setgid(script_fs.st_gid) != 0)
-		panic(69, "setgid %d: %s.", script_fs.st_gid, strerror(errno));
+		ERR_UNAVAILABLE("setgid %d: %s.",
+		                script_fs.st_gid, strerror(errno));
 	if (setuid(script_fs.st_uid) != 0)
-		panic(69, "setuid %s: %s.", script_fs.st_uid, strerror(errno));
+		ERR_UNAVAILABLE("setuid %s: %s.",
+		                script_fs.st_uid, strerror(errno));
 	if (setuid(0) != -1)
-		panic(69, "setuid 0: %s.", strerror(errno));
+		ERR_UNAVAILABLE("setuid 0: %s.",
+		                strerror(errno));
 
 
 	/*
@@ -1053,11 +1224,11 @@ int main (void) {
 
 	uid_t prog_uid = getuid();
 	if (prog_uid != www_uid)
-		panic(77, "UID %d: not permitted.", prog_uid);
+		ERR_NOPERM("UID %d: not permitted.", prog_uid);
 
 	gid_t prog_gid = getgid();
 	if (prog_gid != www_gid)
-		panic(77, "GID %d: not permitted.", prog_gid);
+		ERR_NOPERM("GID %d: not permitted.", prog_gid);
 
 
 	/*
@@ -1069,7 +1240,7 @@ int main (void) {
 
 	char *restrict home_dir = realpath_f(pwd->pw_dir);
 	if (STRNE(pwd->pw_dir, home_dir))
-		panic(69, "%s: not a canonical path.", pwd->pw_dir);
+		ERR_UNAVAILABLE("%s: not a canonical path.", pwd->pw_dir);
 	free(home_dir); home_dir = NULL;
 
 	is_subdir_f(script_path, pwd->pw_dir);
@@ -1077,29 +1248,30 @@ int main (void) {
 	char *document_root = NULL;
 	document_root = getenv("DOCUMENT_ROOT");
 	if (document_root == NULL)
-		panic(64, "DOCUMENT_ROOT: not set.");
+		ERR_USAGE("DOCUMENT_ROOT: not set.");
 	if (STREQ(document_root, ""))
-		panic(64, "DOCUMENT_ROOT: is empty.");
-	
+		ERR_USAGE("DOCUMENT_ROOT: is empty.");
+
 	char *restrict canonical_document_root = realpath_f(document_root);
 	if (STRNE(document_root, canonical_document_root))
-		panic(69, "DOCUMENT_ROOT: %s: not a canonical path.", document_root);
+		ERR_UNAVAILABLE("DOCUMENT_ROOT: %s: not a canonical path.",
+		                document_root);
 	free(canonical_document_root); canonical_document_root = NULL;
 
 	is_subdir_f(script_path, document_root);
 	free(document_root); document_root = NULL;
 
-	is_excl_owner_f(script_fs.st_uid, script_fs.st_gid, script_path, pwd->pw_dir);
-	is_excl_owner_f(0, 0, pwd->pw_dir, NULL);
+	is_excl_owner_f(script_fs.st_uid, script_fs.st_gid,
+	                script_path, pwd->pw_dir);
+	is_excl_owner_f(0, 0,
+		        pwd->pw_dir, NULL);
 
 	if (script_fs.st_mode & S_IWOTH)
-		panic(69, "%s: is world-writable.", script_path);
-	if (script_fs.st_mode & S_IXOTH)
-		panic(69, "%s: is world-executable.", script_path);
+		ERR_UNAVAILABLE("%s: is world-writable.", script_path);
 	if (script_fs.st_mode & S_ISUID)
-		panic(69, "%s: has its set-UID-bit set.", script_path);
+		ERR_UNAVAILABLE("%s: has its set-UID-bit set.", script_path);
 	if (script_fs.st_mode & S_ISGID)
-		panic(69, "%s: has its set-GID-bit set.", script_path);
+		ERR_UNAVAILABLE("%s: has its set-GID-bit set.", script_path);
 
 
 	/*
@@ -1109,9 +1281,11 @@ int main (void) {
 
 	char *suffix = strrchr(script_path, '.');
 	if (!suffix)
-		panic(64, "%s: has no filename ending.", script_path);
+		ERR_USAGE("%s: has no filename ending.",
+		          script_path);
 	if (STRNE(suffix, SCRIPT_SUFFIX))
-		panic(64, "%s: does not end with \"%s\".", script_path, SCRIPT_SUFFIX);
+		ERR_USAGE("%s: does not end with \"%s\".",
+		          script_path, SCRIPT_SUFFIX);
 
 
 	/*
@@ -1122,5 +1296,5 @@ int main (void) {
 	char *const argv[] = { CGI_HANDLER, NULL };
 	execve(CGI_HANDLER, argv, environ);
 
-	panic(71, "execve %s: %s.", CGI_HANDLER, strerror(errno));
+	ERR_OSERR("execve %s: %s.", CGI_HANDLER, strerror(errno));
 }
