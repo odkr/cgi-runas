@@ -480,7 +480,6 @@ typedef struct list_s {
 void panic (const int status, const char *message, ...) {
 	if (isatty(fileno(stdout))) {
 		time_t now_sec = time(NULL);
-		
 		if (now_sec == -1) {
 			EPRINTF("<time: %s>", strerror(errno));
 		} else {
@@ -778,7 +777,8 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 		list_t *prev = item->prev;
 
 		if (stat(dir, &dir_fs) != 0)
-			ERR_UNAVAILABLE("%s: %s.", dir, strerror(errno));
+			ERR_UNAVAILABLE("%s: %s.",
+			                dir, strerror(errno));
 		if (dir_fs.st_uid != uid)
 			ERR_UNAVAILABLE("%s: not owned by UID %d.",
 					dir, uid);
@@ -786,7 +786,8 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 			ERR_UNAVAILABLE("%s: not owned by GID %d.",
 			                dir, gid);
 		if (dir_fs.st_mode & S_IWOTH)
-			ERR_UNAVAILABLE("%s: is world-writable.", dir);
+			ERR_UNAVAILABLE("%s: is world-writable.",
+			                dir);
 
 		free(dir);
 		free(item);
@@ -823,46 +824,43 @@ void is_subdir_f (char *sub, char *super) {
  *
  * Caveats:
  *
- *    Deviating from POSIX.1-2018, `is_portable_name` requiers the
- *    the first character of a name to a letter or the underscore ("_").
+ *    Deviating from POSIX.1-2018, `is_portable_name` requires the
+ *    the first character of a name to be a letter or an underscore ("_").
  *
  * Returns:
  *
- *     0 - The string is a syntactically valid user- or groupname.
- *    -1 - The string is the empty string.
- *    -2 - The string is not a portable name.
+ *    0  - If the string is a portable name.
+ *    -1 - Otherwise.
  *
  * See also:
  *
  *    - <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_437>
  */
 int is_portable_name (char *str) {
-	int len = strlen(str);
-	if (len == 0)
-		return -1;
-
-	int ord = (char) str[0];	
-	if (
-		!(65 <= ord && ord <= 90)  &&
-		!(97 <= ord && ord <= 122) &&
-		  95 != ord
-	)
-		return -2;
-
 	int i;
-	for (i = 0; i < len; i++) {
-		ord = (char) str[i];
+	for (i = 0; i < strlen(str); i++) {
+		int c = (char) str[i];
 		if (
-			!(48 <= ord && ord <= 57)  &&
-			!(65 <= ord && ord <= 90)  &&
-			!(97 <= ord && ord <= 122) &&
-			  45 != ord &&
-			  46 != ord &&
-			  95 != ord
+			// A-Z.
+			(65 <= c && c <= 90)	||
+			// a-z.
+			(97 <= c && c <= 122)	||
+			// "_"
+			 95 == c
 		)
-			return -2;
+			continue;
+		if (
+			i == 0 && !(
+				// 0-9.
+				(48 <= c && c <= 57)	||
+				// "-"
+				45 == c			||
+				// "."
+				46 == c			||
+			)
+		)
+			return -1;
 	}
-	
 	return 0;
 }
 
