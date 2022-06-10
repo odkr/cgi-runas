@@ -679,7 +679,7 @@ int path_max (char *path) {
 		return -1;
 	
 	char *dir;
-	if (fs.st_mode & S_ISDIR)
+	if (S_ISDIR(fs.st_mode))
 		dir = path;
 	else
 		dir = dirname(path);
@@ -856,7 +856,7 @@ int is_portable_name (char *str) {
 				// "-"
 				45 == c			||
 				// "."
-				46 == c			||
+				46 == c
 			)
 		)
 			return -1;
@@ -1000,7 +1000,7 @@ int main (void) {
 			ERR_UNAVAILABLE("%s: %s.",
 			                CGI_HANDLER, strerror(errno));
 
-		if (!(cgi_handler_fs.st_mode & S_ISREG))
+		if (!S_ISREG(cgi_handler_fs.st_mode))
 			ERR_UNAVAILABLE("CGI_HANDLER: %s: not a regular file.",
 			                CGI_HANDLER);
 		if (cgi_handler_fs.st_uid != 0)
@@ -1100,7 +1100,7 @@ int main (void) {
 			ERR_UNAVAILABLE("%s: %s.",
 			                SCRIPT_BASE_DIR, strerror(errno));
 
-		if (!(script_base_dir_fs.st_mode & S_ISDIR))
+		if (!S_ISDIR(script_base_dir_fs.st_mode))
 			ERR_UNAVAILABLE("%s: not a directory.",
 			                SCRIPT_BASE_DIR);
 		if (script_base_dir_fs.st_uid != 0)
