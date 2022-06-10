@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 // The configuration.
@@ -101,13 +102,6 @@
 #define EX_CONFIG 78
 
 /*
- * Constant: CR_SELF_EXE
- *
- * `/proc/self/exe`. Needed to locate the executable.
- */
-#define CR_SELF_EXE "/proc/self/exe"
-
-/*
  * Constant: CR_PATH_MAX
  *
  * A safe fallback value for the maximum length of a path,
@@ -123,11 +117,47 @@
  */
 #define CR_SECURE_PATH_MAX 1024
 
+/*
+ * Constant: CR_SELF_EXE
+ *
+ * `/proc/self/exe`. Needed to locate the executable.
+ */
+#define CR_SELF_EXE "/proc/self/exe"
+
+/*
+ * Constant: CR_TS_MAX
+ *
+ * Maximum length of the timestamp for error message.
+ */
+#define CR_TS_MAX 128
+
 
 /*
  * MACROS
  * ======
  */
+
+/*
+ * Macro: EPRINTF
+ *
+ * Print a formatted string to STDERR.
+ *
+ * Arguments:
+ *
+ *    See `printf`.
+ */
+#define EPRINTF(...) fprintf(stderr, __VA_ARGS__)
+
+/*
+ * Macro: EPUTS
+ *
+ * Print to STDERR.
+ *
+ * Arguments:
+ *
+ *    See `puts`.
+ */
+#define EPUTS(a) fputs(a, stderr)
 
 /*
  * Macro: ERR_USAGE
@@ -429,11 +459,17 @@ typedef struct list_s {
  *
  * Print an error message to STDERR and exit the programme.
  *
+ * The message is prefixed with a timestamp if STDERR is not a TTY.
+ *
  * Arguments:
  * 
  *    status  - Status to exit with.
  *    message - Message to print.
  *    ...     - Arguments for the message (think `printf`).
+ *
+ * Constants:
+ *
+ *    <DATE_FORMAT> - How to format the timestamp.
  *
  * Globals:
  *
@@ -442,12 +478,35 @@ typedef struct list_s {
  *                  are printed before the message.
  */
 void panic (const int status, const char *message, ...) {
-	if (prog_name) fprintf(stderr, "%s: ", prog_name);
+	if (isatty(fileno(stdout))) {
+		time_t now_sec = time(NULL);
+		
+		if (now_sec == -1) {
+			EPRINTF("<time: %s>", strerror(errno));
+		} else {
+			struct tm *now_rec = localtime(&now_sec);
+			if (!now_rec) {
+				EPRINTF("<localtime: %s>", strerror(errno));
+			} else {
+				char ts[CR_TS_MAX];
+				if (strftime(ts, CR_TS_MAX,
+					         DATE_FORMAT, now_rec) == 0) {
+					EPUTS("<strftime: returned 0.>");
+				} else {
+					EPUTS(ts);
+				}
+			}
+		}
+		EPUTS(": ");
+	}
+
+	if (prog_name) EPRINTF("%s: ", prog_name);
+	
 	va_list argp;
 	va_start(argp, message);
 	vfprintf(stderr, message, argp);
 	va_end(argp);
-	fprintf(stderr, "\n");
+	EPRINTF("\n");
 	exit(status);
 }
 
@@ -1083,7 +1142,7 @@ int main (void) {
 			ERR_CONFIG("%s: invalid username.", WWW_USER);
 		pwd = getpwnam(WWW_USER); 
 		if (!pwd)
-			ERR_NOUSER(, "%s: no such user.", WWW_USER);
+			ERR_NOUSER("%s: no such user.", WWW_USER);
 	#else
 		ERR_CONFIG("WWW_USER: not defined.")
 	#endif
@@ -1095,7 +1154,7 @@ int main (void) {
 			ERR_CONFIG("%s: invalid username.", WWW_GROUP);
 		grp = getgrnam(WWW_GROUP);
 		if (!grp)
-			ERR_NOUSER(, "%s: no such group.", WWW_GROUP);
+			ERR_NOUSER("%s: no such group.", WWW_GROUP);
 	#else
 		ERR_CONFIG("WWW_GROUP: not defined.")
 	#endif
