@@ -138,7 +138,7 @@ above accordingly. Note that **php-runas** is the name we have given
 
 ## Documentation
 
-See the [manual](manual.rst), the [source code](cgi-runas.c), and
+See the [manual](MANUAL.rst), the [source code](cgi-runas.c), and
 the [configuration file](config.h) for more details.
 
 
