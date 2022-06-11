@@ -478,7 +478,7 @@ typedef struct list_s {
  *                  are printed before the message.
  */
 void panic (const int status, const char *message, ...) {
-	if (isatty(fileno(stdout))) {
+	if (!isatty(fileno(stdout))) {
 		time_t now_sec = time(NULL);
 		if (now_sec == -1) {
 			EPRINTF("<time: %s>", strerror(errno));
@@ -717,7 +717,7 @@ char *realpath_f (char *path) {
 
 	max = path_max(path);
 	if (max == -1)
-		ERR_UNAVAILABLE("stat %s: %s", path, strerror(errno));
+		ERR_UNAVAILABLE("stat %s: %s.", path, strerror(errno));
 
 	len = strlen(path);
 	if (len == 0)
