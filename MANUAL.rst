@@ -180,7 +180,7 @@ Self-checks:
 2. Is **cgi-runas** itself owned by the superuser and **WWW_GROUP** and
    neither world-writable nor world-executable?
 
-These checks are *not* run if **cgi-runas** was compiled with *NO_PROCFS*.
+These checks are *not* run if **cgi-runas** was compiled with NO_PROCFS.
 
 Permission checks:
 
@@ -226,11 +226,12 @@ User and group checks:
 Transition checks:
 
 1. Was dropping the caller's supplementary groups successful?
-   Note, supplementary groups cannot be dropped if
-   **cgi-runas** was compiled with **NO_SETGROUPS**.
 2. Was setting the GID to that of the script file successful?
 3. Was setting the UID to that of the script file successful?
 4. Did trying to reset the UID to that of the superuser fail?
+
+Supplementary groups cannot be dropped if
+**cgi-runas** was compiled with NO_SETGROUPS.
 
 CGI
 ---
