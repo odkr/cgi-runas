@@ -1,3 +1,6 @@
+[![Language grade: C](https://img.shields.io/lgtm/grade/cpp/github/odkr/cgi-runas.svg)](https://lgtm.com/projects/g/odkr/cgi-runas)
+[![Build](https://ci.appveyor.com/api/projects/status/3besl1g6c66llwax/branch/main?svg=true)](https://ci.appveyor.com/project/odkr/cgi-runas/branch/main)
+
 # cgi-runas
 
 Run CGI scripts under the UID and GID of their owner.
