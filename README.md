@@ -27,7 +27,7 @@ but slightly updated and more paranoid, mechanims as
 However, it has *neither* been thoroughly tested *nor* audited and
 has seen little real-world usage.
 
-See **SECRUITY** in the [manual](MANUAL.rst) for details.
+See **SECURITY** in the [manual](MANUAL.rst) for details.
 
 
 ## Requirements
