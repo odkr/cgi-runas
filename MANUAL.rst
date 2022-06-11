@@ -32,7 +32,7 @@ before compilation.
 
 **DATE_FORMAT**
 	How to format timestamps in error messages.
-	See strftime(3) for details.
+	See strftime(3) for the syntax.
 
 **SCRIPT_MIN_UID**
 	A user ID (UID).
