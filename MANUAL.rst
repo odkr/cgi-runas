@@ -112,7 +112,7 @@ Introduction
 ------------
 
 **cgi-runas** *aims* to achieve security by being correct, following best
-practices, and by being easy to use. It *tries* to comply with POSIX.1-2018
+practices, and being easy to use. It *tries* to comply with POSIX.1-2018
 and implements similar, but more modern and more paranoid, mechanims as
 [Apache's suEXEC](https://httpd.apache.org/docs/2.4/suexec.html).
 

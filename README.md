@@ -21,7 +21,7 @@ See the [manual](MANUAL.rst) for details.
 ## Security
 
 **cgi-runas** *aims* to achieve security by being correct, following
-best practices, and by being easy to use. It implements similar,
+best practices, and being easy to use. It implements similar,
 but slightly updated and more paranoid, mechanims as
 [Apache's suEXEC](https://httpd.apache.org/docs/2.4/suexec.html).
 However, it has *neither* been thoroughly tested *nor* audited and
