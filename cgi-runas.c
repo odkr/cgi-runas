@@ -211,6 +211,32 @@
 #define CR_SECURE_PATH_MAX 1024
 
 /*
+ * Constant: CR_ENVVAR_NAME_MAX
+ *
+ * The maximum length for environment variable names.
+ */
+#define CR_ENVVAR_NAME_MAX 128
+
+/*
+ * Constant: CR_ENVVAR_VALUE_MAX
+ *
+ * The maximum length for environment variable values.
+ */
+#if PATH_MAX > -1
+	#define CR_ENVVAR_VALUE_MAX PATH_MAX
+#else
+	#define CR_ENVVAR_VALUE_MAX 8192
+#endif
+
+/*
+ * Constant: CR_ENVVAR_MAX
+ *
+ * The maximum length for environment variables.
+ */
+#define CR_ENVVAR_MAX = CR_ENVVAR_NAME_MAX + CR_ENVVAR_VALUE_MAX + 1
+
+
+/*
  * Constant: CR_SELF_EXE
  *
  * `/proc/self/exe`. Needed to locate the executable.
@@ -239,6 +265,7 @@
  *
  *    See `printf`.
  */
+// flawfinder: ignore
 #define EPRINTF(...) fprintf(stderr, __VA_ARGS__)
 
 /*
@@ -340,7 +367,6 @@
  *    ...  - See <ERR_UNAVAILABLE>.
  */
 #define ASSERT(cond, ...) if (!(cond)) ERR_UNAVAILABLE(__VA_ARGS__)
-
 
 /*
  * Macro: ASS_CONF_NEMPTY
@@ -588,7 +614,7 @@ if (fs.st_mode & S_ISGID) \
 	ASSERT(STREQ(path, canon), "%s: not canonical.", path)
 
 /*
- * Macro: ASS_PORTNAME
+ * Macro: ASS_SAFE_NAME
  *
  * Raise an unavailability error if a name is not portable.
  *
@@ -598,10 +624,10 @@ if (fs.st_mode & S_ISGID) \
  *
  * See also:
  *
- *    <is_portable_name>
+ *    <is_safe_name>
  */
-#define ASS_PORTNAME(name) \
-	ASSERT(is_portable_name(name) == 0, "%s: invalid name.", name)
+#define ASS_SAFE_NAME(name) \
+	ASSERT(is_safe_name(name) == 0, "%s: invalid name.", name)
 
 /*
  * Macro: STREQ
@@ -652,6 +678,7 @@ if (fs.st_mode & S_ISGID) \
  *    Non-zero - A does start with B.
  *    0 - A does *not* start with B.
  */
+// flawfinder: ignore
 #define STRSTARTW(a, b) (strncmp(a, b, strlen(b)) == 0)
 
 /*
@@ -669,6 +696,7 @@ if (fs.st_mode & S_ISGID) \
  *    Non-zero - A does *not* start with B.
  *    0 - A does start with B.
  */
+// flawfinder: ignore
 #define STRNOSTARTW(a, b) (strncmp(a, b, strlen(b)) != 0)
 
 
@@ -854,7 +882,9 @@ void panic (const int status, const char *message, ...) {
 			if (!now_rec) {
 				EPRINTF("<localtime: %s>", strerror(errno));
 			} else {
-				char ts[CR_TS_MAX];
+				// strftime asks for the buffer size.
+				// flawfinder: ignore
+				char ts[CR_TS_MAX] = {};
 				if (strftime(ts, CR_TS_MAX,
 					     DATE_FORMAT, now_rec) == 0) {
 					EPUTS("<strftime: returned 0.>");
@@ -870,6 +900,7 @@ void panic (const int status, const char *message, ...) {
 	
 	va_list argp;
 	va_start(argp, message);
+	// flawfinder: ignore
 	vfprintf(stderr, message, argp);
 	va_end(argp);
 	EPRINTF("\n");
@@ -987,9 +1018,8 @@ list_t *dir_names (char *start, char *stop) {
 /*
  * Function: getenv_f
  *
- * Read an environment variable,
- * but abort the programme if an error occors or
- * the variable is unset or empty.
+ * Read an environment variable, but abort the programme if an error occors,
+ * the variable is unset, empty, or suspiciously long.
  *
  * Argument:
  *
@@ -998,11 +1028,24 @@ list_t *dir_names (char *start, char *stop) {
  * Returns:
  *
  *    A pointer to the content of the environment variable.
+ *
+ * Constants:
+ *
+ *    CR_ENVVAR_NAME_MAX  - Maximum length of a variable name.
+ *    CR_ENVVAR_VALUE_MAX - Maximum length af a variable value.
+ *
  */
 char *getenv_f (char *var) {
+	ASSERT(strnlen(var, CR_ENVVAR_NAME_MAX) < CR_ENVVAR_NAME_MAX,
+	       "encountered suspiciously long environment variable name.");
+	// I don't like it any more than flawfinder,
+	// but I have to read the environment.
+	// flawfinder: ignore
 	char *value = getenv(var);
 	ASSERT(value, "%s: not set.", *var);
 	ASSERT(STRNE(value, ""), "%s: is empty.", *var);
+	ASSERT(strnlen(value, CR_ENVVAR_VALUE_MAX) < CR_ENVVAR_VALUE_MAX,
+	       "%s: value too long.", *var)
 	return value;
 }
 
@@ -1125,21 +1168,31 @@ char *realpath_f (char *path) {
 	max = path_max(path);
 	ASSERT(max != -1, "stat %s: %s.", path, strerror(errno));
 
-	len = strlen(path);
+	len = strnlen(path, max);
 	if (len == 0) ERR_SOFTWARE("got empty string as path.");
-	ASSERT(len <= max, "%s: path too long.", path);
+	ASSERT(len < max, "%s: path too long.", path);
 
-	char *restrict real = realpath(path, NULL);
+	// The '+ 1' should be superfluous, but better be safe than sorry.
+	int bufsize = PATH_MAX + 1;
+	if (bufsize < 8192) bufsize = 8192;
+	// flawfinder: ignore
+	char buf[bufsize] = {};
+
+	// Safeguards against bad realpath implementations are in place.
+	// flawfinder: ignore
+	char *restrict real = realpath(path, buf);
 	ASSERT(real, "realpath %s: %s.", path, strerror(errno));
 
 	max = path_max(real);
 	ASSERT(max != -1, "stat %s: %s.", real, strerror(errno));
-	
-	len = strlen(real);
-	ASSERT(len > 0, "%s: canonical path is empty.", path);
-	ASSERT(len <= max, "%s: canonical path too long.", path);
 
-	return real;
+	len = strnlen(real, max);
+	ASSERT(len > 0, "%s: canonical path is empty.", path);
+	ASSERT(len < max, "%s: canonical path too long.", path);
+
+	char *restrict ret = strndup(real, max);
+	if (!ret) ERR_OSERR(strerror(errno));
+	return ret;
 }
 
 /*
@@ -1199,13 +1252,17 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
  *    super - The other directory. 
  */
 void is_subdir_f (char *sub, char *super) {
-	char sep = sub[strlen(super)];
+	int max = path_max(super);
+	ASSERT(max != -1, "stat %s: %s.", super, strerror(errno));
+	int len = strnlen(super, max);
+	ASSERT(len < max, "%s: path too long.", super);
+	char sep = sub[len];
 	ASSERT(STRSTARTW(sub, super) || sep == '/' || sep == '\0',
 	                "%s: not in %s.", sub, super);
 }
 
 /*
- * Function: is_portable_name
+ * Function: is_safe_name
  *
  * Check if a string is a syntactically valid user- or groupname.
  *
@@ -1215,7 +1272,7 @@ void is_subdir_f (char *sub, char *super) {
  *
  * Caveats:
  *
- *    Deviating from POSIX.1-2018, `is_portable_name` requires the
+ *    Deviating from POSIX.1-2018, `is_safe_name` requires the
  *    the first character of a name to be a letter or an underscore ("_").
  *
  * Returns:
@@ -1227,8 +1284,9 @@ void is_subdir_f (char *sub, char *super) {
  *
  *    - <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_437>
  */
-int is_portable_name (char *str) {
-	int len = strlen(str);
+int is_safe_name (char *str) {
+	// FIXME use LOGIN_NAME_MAX and strnlen
+	int len = strnlen(str);
 	if (len == 0)
 		return -1;
 
@@ -1243,7 +1301,7 @@ int is_portable_name (char *str) {
 	) return -1;	
 
 	int i;
-	for (i = 1; i < strlen(str); i++) {
+	for (i = 1; i < len; i++) {
 		c = (char) str[i];
 		if (
 			// 0-9.
@@ -1319,21 +1377,33 @@ int main (int argc, const char *argv[]) {
 	if (!prog_path) {
 		const char *const paths[] = {CR_SELF_EXE, argv[0], NULL};
 		const char *const *path = paths;
+		
+		// The '+ 1' should be superfluous, but better be safe than sorry.
+		int bufsize = PATH_MAX + 1;
+		if (bufsize < 8192) bufsize = 8192;
+		// flawfinder: ignore
+		char buf[bufsize] = {};
+
+		char *restrict real = NULL;
 		while (*path) {
 			errno = 0;
 			if (*path)
-				prog_path = realpath(*path, NULL);
-			if (prog_path)
+				// Safeguards against bad realpath
+				// implementations are in place.
+				// flawfinder: ignore
+				real = realpath(*path, buf);
+			if (real)
 				break;
 			path++;
 		}
-		ASSERT(prog_path, "failed to find myself.");
+		ASSERT(real, "failed to find myself.");
 
-		int len = strlen(prog_path);
-		ASSERT(len > 0,
-		                "%s: canonical path is empty.", prog_path);
-		ASSERT(len <= CR_PATH_MAX,
-		                "%s: canonical path too long.", prog_path);
+		int len = strnlen(real, CR_PATH_MAX);
+		ASSERT(len > 0, "my canonical path is empty.");
+		ASSERT(len < CR_PATH_MAX, "my canonical path too long.");
+
+		char *restrict prog_path = strndup(real, CR_PATH_MAX);
+		if (!prog_path) ERR_OSERR(strerror(errno));
 
 		struct stat fs;
 		ASS_STAT(prog_path, &fs);
@@ -1349,7 +1419,10 @@ int main (int argc, const char *argv[]) {
 	 */
 
 	while (*env_p) {
-		int len = strlen(*env_p);
+		int len = strnlen(*env_p, CR_ENVVAR_MAX);
+		if (len >= CR_ENVVAR_MAX)
+			// FIXME: print a warning.
+			continue;
 		if (len == 0)
 			continue;
 		const char *const *safe = safe_env_vars;
@@ -1442,17 +1515,17 @@ int main (int argc, const char *argv[]) {
 	ASS_CONF_NEMPTY(SCRIPT_SUFFIX);
 
 	// SECURE_PATH.
-	if (strlen(SECURE_PATH) > CR_SECURE_PATH_MAX)
+	if (strnlen(SECURE_PATH, CR_SECURE_PATH_MAX) >= CR_SECURE_PATH_MAX)
 		ERR_CONFIG("SECURE_PATH: is too long.");
 
 	// WWW_USER.
 	ASS_CONF_NEMPTY(WWW_USER);
-	ASS_PORTNAME(WWW_USER);
+	ASS_SAFE_NAME(WWW_USER);
 	ASS_USER_EXISTS(pwd, WWW_USER);
 
 	// WWW_GROUP.
 	ASS_CONF_NEMPTY(WWW_GROUP);
-	ASS_PORTNAME(WWW_GROUP);
+	ASS_SAFE_NAME(WWW_GROUP);
 	ASS_GROUP_EXISTS(grp, WWW_GROUP);
 
 	// Needed later.
@@ -1515,10 +1588,10 @@ int main (int argc, const char *argv[]) {
 	                "%s: GID is privileged.", script_path);
 
 	ASS_UID_EXISTS(pwd, script_fs.st_uid);
-	ASS_PORTNAME(pwd->pw_name);
+	ASS_SAFE_NAME(pwd->pw_name);
 
 	ASS_GID_EXISTS(grp, script_fs.st_gid);
-	ASS_PORTNAME(grp->gr_name);
+	ASS_SAFE_NAME(grp->gr_name);
 
 	ASSERT(script_fs.st_gid == pwd->pw_gid,
 	       "%s: GID %d: not %s's primary group.",
