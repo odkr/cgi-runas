@@ -91,7 +91,7 @@ ENVIRONMENT
 
 **PATH**
 	A search path.
-	Overwritten with a safe value before **CGI_HANDLER** is called.
+	Overwritten with **SECURE_PATH** before **CGI_HANDLER** is called.
 
 **PATH_TRANSLATED**
 	Path of the script to run.
