@@ -1200,7 +1200,7 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
  */
 void is_subdir_f (char *sub, char *super) {
 	char sep = sub[strlen(super)];
-	ASSERT(STRSTARTW(sub, super) || (sep == '/' && sep == '\0'),
+	ASSERT(STRSTARTW(sub, super) || sep == '/' || sep == '\0',
 	                "%s: not in %s.", sub, super);
 }
 
@@ -1316,7 +1316,6 @@ int main (int argc, const char *argv[]) {
 	 * --------------
 	 */
 
-	char *restrict prog_path = NULL;
 	if (!prog_path) {
 		const char *const paths[] = {CR_SELF_EXE, argv[0], NULL};
 		const char *const *path = paths;
