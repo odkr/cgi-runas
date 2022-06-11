@@ -78,7 +78,7 @@ before compilation.
 	Only processes running as this group may call **cgi-runas**.
 	Should be set to the group your webserver runs as.
 
-Just in case your C is rusty: ```#define``` statements are *not* terminated
+Just in case your C is rusty: ``#define`` statements are *not* terminated
 with a semicolon; strings must be enclosed in double quotes ("..."), *not*
 single quotes; and numbers must *not* be enclosed in quotes at all.
 
