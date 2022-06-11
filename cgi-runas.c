@@ -36,8 +36,105 @@
 #include <time.h>
 #include <unistd.h>
 
-// The configuration.
+
+/*
+ * CONFIGURATION
+ * =============
+ */
+
 #include "config.h"
+
+#if !defined(CGI_HANDLER)
+	#error CGI_HANDLER: not defined.
+#endif
+
+#if !defined(DATE_FORMAT)
+	#define DATE_FORMAT "%b %e %T"
+#endif
+
+#ifdef SCRIPT_MIN_UID
+	#if SCRIPT_MIN_UID < 1
+		#error SCRIPT_MIN_UID: must be greater than 0.
+	#endif
+	#ifdef UID_MAX
+		#if SCRIPT_MIN_UID > UID_MAX
+			#error SCRIPT_MIN_UID: must not be greater than UID_MAX.
+		#endif
+	#endif
+
+	#ifdef SCRIPT_MAX_UID
+		#if SCRIPT_MIN_GID >= SCRIPT_MAX_UID
+			#error SCRIPT_MIN_GID: must be smaller than SCRIPT_MAX_UID.
+		#endif
+	#endif
+#else
+	#error SCRIPT_MIN_UID: not defined.
+#endif
+
+#ifdef SCRIPT_MIN_GID
+	#if SCRIPT_MIN_GID < 1
+		#error SCRIPT_MIN_GID: must be greater than 0.
+	#endif
+	#ifdef GID_MAX
+		#if SCRIPT_MIN_GID > GID_MAX
+			#error SCRIPT_MIN_GID: must not be greater than GID_MAX.
+		#endif
+	#endif
+
+	#ifdef SCRIPT_MAX_GID
+		#if SCRIPT_MIN_GID >= SCRIPT_MAX_GID
+			#error SCRIPT_MIN_GID: must be smaller than SCRIPT_MAX_GID.
+		#endif
+	#endif
+#else
+	#error SCRIPT_MIN_GID: not defined.
+#endif
+
+#ifdef SCRIPT_MAX_UID
+	#if SCRIPT_MAX_UID < 1
+		#error SCRIPT_MAX_UID: must be greater than 0.
+	#endif
+	#ifdef UID_MAX
+		#if SCRIPT_MAX_UID > UID_MAX
+			#error SCRIPT_MAX_UID: must not be greater than UID_MAX.
+		#endif
+	#endif
+#else
+	#error SCRIPT_MAX_UID: not defined.
+#endif
+
+#ifdef SCRIPT_MAX_GID
+	#if SCRIPT_MAX_GID < 1
+		#error SCRIPT_MAX_GID: must be greater than 0.
+	#endif
+	#ifdef GID_MAX
+		#if SCRIPT_MAX_GID > GID_MAX
+			#error SCRIPT_MAX_GID: must not be greater than GID_MAX.
+		#endif
+	#endif
+#else
+	#error SCRIPT_MAX_GID: not defined.
+#endif
+
+#if !defined(SCRIPT_BASE_DIR)
+	#error SCRIPT_BASE_DIR: not defined.
+#endif
+
+#if !defined(SCRIPT_SUFFIX)
+	#error SCRIPT_SUFFIX: not defined.
+#endif
+
+#if !defined(SECURE_PATH)
+	#error SECURE_PATH: not defined.
+#endif
+
+#if !defined(WWW_USER)
+	#error WWW_USER: not defined.
+#endif
+
+#if !defined(WWW_GROUP)
+	#error WWW_USER: not defined.
+#endif
 
 
 /*
@@ -49,11 +146,11 @@
 // See <https://www.freebsd.org/cgi/man.cgi?query=sysexits>.
 
 /*
- * Constant: EX_USAGE
+ * Constant: EX_NOINPUT
  *
- * Status to exit with if the user made an error.
+ * Status to exit with if a file does not exist.
  */
-#define EX_USAGE 64
+#define EX_NOINPUT 66
 
 /*
  * Constant: EX_NOUSER
@@ -156,15 +253,15 @@
 #define EPUTS(a) fputs(a, stderr)
 
 /*
- * Macro: ERR_USAGE
+ * Macro: ERR_NOINPUT
  *
- * Raise a usage error.
+ * Raise a no-such-file error.
  *
  * Arguments:
  *
  *    The same as <panic>, but without the status.
  */
-#define ERR_USAGE(...) panic(EX_USAGE, __VA_ARGS__)
+#define ERR_NOINPUT(...) panic(EX_NOINPUT, __VA_ARGS__)
 
 /*
  * Macro: ERR_NOUSER
@@ -233,18 +330,278 @@
 #define ERR_CONFIG(...) panic(EX_CONFIG, __VA_ARGS__)
 
 /*
- * Macro: ASS_USAGE
+ * Macro: ASSERT
  *
- * Raise a usage error if a condition is false.
+ * Raise an unavailability error if a condition fails.
  *
  * Arguments:
  *
  *    cond - A condition.
- *    ...  - See <ERR_USAGE>.
+ *    ...  - See <ERR_UNAVAILABLE>.
  */
-#define ASS_USAGE(cond, ...) if (!(cond)) ERR_UNAVAILABLE(__VA_ARGS__)
+#define ASSERT(cond, ...) if (!(cond)) ERR_UNAVAILABLE(__VA_ARGS__)
 
-// FIXME: Define similar assertions for the other error types.
+
+/*
+ * Macro: ASS_CONF_NEMPTY
+ *
+ * Raise a configuration error if a constant is empty the empty string.
+ *
+ * Arguments:
+ *
+ *    cf - A configuration macro.
+ */
+#define ASS_CONF_NEMPTY(cf) if (STREQ(cf, "")) ERR_CONFIG(#cf ": is empty.")
+
+/*
+ * Macro: ASS_USER_EXISTS
+ *
+ * Raise an OS error if a user does not exist.
+ *
+ * Arguments:
+ *
+ *    pwd  - A `struct passwd` pointer.
+ *    user - A username.
+ *
+ * Side-effects:
+ *
+ *    `pwd` is overwritten with the user's record.
+ */
+#define ASS_USER_EXISTS(pwd, user) \
+	if (!(pwd = getpwnam(user))) \
+		ERR_NOUSER("%s: no such user.", user)
+
+/*
+ * Macro: ASS_GROUP_EXISTS
+ *
+ * Raise a no-such-user error if a group does not exist.
+ *
+ * Arguments:
+ *
+ *    grp   - A `struct group` pointer.
+ *    group - A groupname.
+ *
+ * Side-effects:
+ *
+ *    `grp` is overwritten with the group's record.
+ */
+#define ASS_GROUP_EXISTS(grp, group) \
+	if (!(grp = getgrnam(group))) \
+		ERR_NOUSER("%s: no such group.", group)
+
+/*
+ * Macro: ASS_UID_EXISTS
+ *
+ * Raise a no-such-user error if a UID does not exist.
+ *
+ * Arguments:
+ *
+ *    pwd - A `struct passwd` pointer.
+ *    uid - A UID.
+ *
+ * Side-effects:
+ *
+ *    `pwd` is overwritten with the user's record.
+ */
+#define ASS_UID_EXISTS(pwd, uid) \
+		if (!(pwd = getpwuid(uid))) \
+			ERR_NOUSER("UID %d: no such user.", uid)
+
+/*
+ * Macro: ASS_GID_EXISTS
+ *
+ * Raise a no-such-user error if a GID does not exist.
+ *
+ * Arguments:
+ *
+ *    grp - A `struct group` pointer.
+ *    gid - A GID.
+ *
+ * Side-effects:
+ *
+ *    `grp` is overwritten with the group's record.
+ */
+#define ASS_GID_EXISTS(grp, gid) \
+		if (!(grp = getgrgid(gid))) \
+			ERR_NOUSER("GID %d: no such group.", gid)
+
+/*
+ * Macro: ASS_STAT
+ *
+ * Raise a no-input error if a stat fails.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - A `struct stat` pointer.
+ *
+ * Side-effects:
+ *
+ *    `fs` is overwritten with the file's metadata record.
+ */
+#define ASS_STAT(fname, fs) \
+	if (stat(fname, fs) != 0) \
+		ERR_NOINPUT("stat %s: %s", fname, strerror(errno))
+
+/*
+ * Macro: ASS_UID
+ *
+ * Raise a permission error if a file has the wrong UID.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ *    uid    - A UID.
+ */
+#define ASS_UID(fname, fs, uid) \
+	if (fs.st_uid != uid) \
+		ERR_NOPERM("%s: not owned by UID %d.", fname, uid)
+
+/*
+ * Macro: ASS_GID
+ *
+ * Raise a permission error if a file has the wrong GID.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ *    gid    - A GID.
+ */
+#define ASS_GID(fname, fs, gid) \
+if (fs.st_gid != gid) \
+	ERR_NOPERM("%s: not owned by GID %d.", fname, gid)
+
+/*
+ * Macro: ASS_ISDIR
+ *
+ * Raise an unavailability error if a file is not a directory.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+#define ASS_ISDIR(fname, fs) \
+	ASSERT(S_ISDIR(fs.st_mode), "%s: not a directory.", fname)
+
+/*
+ * Macro: ASS_ISREG
+ *
+ * Raise an unavailability error if a file is not a regular file.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+#define ASS_ISREG(fname, fs) \
+	ASSERT(S_ISREG(fs.st_mode), "%s: not a regular file.", fname)
+
+/*
+ * Macro: ASS_IXOTH
+ *
+ * Raise an unavailability error if a file is not world-executable.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+#define ASS_IXOTH(fname, fs) \
+	if (fs.st_mode ^ S_IXOTH) \
+		ERR_NOPERM("%s: is not world-executable.", fname)
+
+/*
+ * Macro: ASS_NWOTH
+ *
+ * Raise a permission error if a file is world-writable.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+#define ASS_NWOTH(fname, fs) \
+	if (fs.st_mode & S_IWOTH) \
+		ERR_NOPERM("%s: is world-writable.", fname)
+
+/*
+ * Macro: ASS_NXOTH
+ *
+ * Raise a permission error if a file is world-executable.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+ #define ASS_NXOTH(fname, fs) \
+	if (fs.st_mode & S_IXOTH) \
+		ERR_NOPERM("%s: is world-executable.", fname)
+
+/*
+ * Macro: ASS_NSUID
+ *
+ * Raise a permission error if a file's set-UID bit is set.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+#define ASS_NSUID(fname, fs) \
+	if (fs.st_mode & S_ISUID) \
+		ERR_NOPERM("%s: set-UID bit is set.", fname)
+
+/*
+ * Macro: ASS_NSGID
+ *
+ * Raise a permission error if a file's set-GID bit is set.
+ *
+ * Arguments:
+ *
+ *    fname  - A filename.
+ *    fs     - The `struct stat` record of that file.
+ */
+#define ASS_NSGID(fname, fs) \
+if (fs.st_mode & S_ISGID) \
+	ERR_NOPERM("%s: set-GID bit is set.", fname)
+
+/*
+ * Macro: ASS_CANON
+ *
+ * Raise an unavailability error if a path is not canonical.
+ *
+ * Arguments:
+ *
+ *    canon - A `char` pointer to hold the canonical path.
+ *    path  - A path.
+ *
+ * Side-effects:
+ *
+ *    `canon` is overwritten with path's canonical path.
+ */
+#define ASS_CANON(canon, path) \
+	canon = realpath_f(path); \
+	ASSERT(STREQ(path, canon), "%s: not canonical.", path)
+
+/*
+ * Macro: ASS_PORTNAME
+ *
+ * Raise an unavailability error if a name is not portable.
+ *
+ * Arguments:
+ *
+ *    name - A filename, username, or groupname.
+ *
+ * See also:
+ *
+ *    <is_portable_name>
+ */
+#define ASS_PORTNAME(name) \
+	ASSERT(is_portable_name(name) == 0, "%s: invalid name.", name)
 
 /*
  * Macro: STREQ
@@ -488,7 +845,7 @@ typedef struct list_s {
  *                  are printed before the message.
  */
 void panic (const int status, const char *message, ...) {
-	if (!isatty(fileno(stdout))) {
+	if (!isatty(fileno(stderr))) {
 		time_t now_sec = time(NULL);
 		if (now_sec == -1) {
 			EPRINTF("<time: %s>", strerror(errno));
@@ -499,7 +856,7 @@ void panic (const int status, const char *message, ...) {
 			} else {
 				char ts[CR_TS_MAX];
 				if (strftime(ts, CR_TS_MAX,
-					         DATE_FORMAT, now_rec) == 0) {
+					     DATE_FORMAT, now_rec) == 0) {
 					EPUTS("<strftime: returned 0.>");
 				} else {
 					EPUTS(ts);
@@ -628,6 +985,46 @@ list_t *dir_names (char *start, char *stop) {
 }
 
 /*
+ * Function: getenv_f
+ *
+ * Read an environment variable,
+ * but abort the programme if an error occors or
+ * the variable is unset or empty.
+ *
+ * Argument:
+ *
+ *    var - An environment variable.
+ *
+ * Returns:
+ *
+ *    A pointer to the content of the environment variable.
+ */
+char *getenv_f (char *var) {
+	char *value = getenv(var);
+	ASSERT(value, "%s: not set.", *var);
+	ASSERT(STRNE(value, ""), "%s: is empty.", *var);
+	return value;
+}
+
+/*
+ * Function: setenv_f
+ *
+ * Set an environment variable,
+ * but abort the programme if an error occors.
+ *
+ * Argument:
+ *
+ *    name  - A variable name.
+ *    value - A value.
+ *    ow    - Overwrite existing values?
+ *            Use 1 for yes and 0 for no.
+ */
+void setenv_f (char *name, char *value, int ow) {
+	ASSERT(setenv(name, value, ow) == 0,
+	       "setenv %s: %s.", name, strerror(errno));
+}
+
+/*
  * Function: path_max
  *
  * Get maximum length of a path on the filesystem
@@ -726,29 +1123,21 @@ char *realpath_f (char *path) {
 	int max, len;
 
 	max = path_max(path);
-	if (max == -1)
-		ERR_UNAVAILABLE("stat %s: %s.", path, strerror(errno));
+	ASSERT(max != -1, "stat %s: %s.", path, strerror(errno));
 
 	len = strlen(path);
-	if (len == 0)
-		ERR_SOFTWARE("got the empty string as path.");
-	if (len > max)
-		ERR_UNAVAILABLE("%s: path is too long.", path);
+	if (len == 0) ERR_SOFTWARE("got empty string as path.");
+	ASSERT(len <= max, "%s: path too long.", path);
 
 	char *restrict real = realpath(path, NULL);
-	if (!real)
-		ERR_UNAVAILABLE("realpath %s: %s.",
-		                path, strerror(errno));
+	ASSERT(real, "realpath %s: %s.", path, strerror(errno));
 
 	max = path_max(real);
-	if (max == -1)
-		ERR_UNAVAILABLE("stat %s: %s", path, strerror(errno));
+	ASSERT(max != -1, "stat %s: %s.", real, strerror(errno));
 	
 	len = strlen(real);
-	if (len == 0)
-		ERR_UNAVAILABLE("%s: canonical path is empty.", path);
-	if (len > max)
-		ERR_UNAVAILABLE("%s: canonical path too long.", path);
+	ASSERT(len > 0, "%s: canonical path is empty.", path);
+	ASSERT(len <= max, "%s: canonical path too long.", path);
 
 	return real;
 }
@@ -777,7 +1166,7 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 	list_t *dirs = dir_names(start, stop);
 	if (!dirs) {
 		if (errno) ERR_OSERR(strerror(errno));
-		else ERR_SOFTWARE("encountered null pointer to list.");
+		ERR_SOFTWARE("encountered null pointer to list.");
 	}
 
 	list_t *item = dirs;
@@ -786,18 +1175,10 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
 		char *dir = item->data;
 		list_t *prev = item->prev;
 
-		if (stat(dir, &dir_fs) != 0)
-			ERR_UNAVAILABLE("%s: %s.",
-			                dir, strerror(errno));
-		if (dir_fs.st_uid != uid)
-			ERR_UNAVAILABLE("%s: not owned by UID %d.",
-					dir, uid);
-		if (dir_fs.st_uid != gid)
-			ERR_UNAVAILABLE("%s: not owned by GID %d.",
-			                dir, gid);
-		if (dir_fs.st_mode & S_IWOTH)
-			ERR_UNAVAILABLE("%s: is world-writable.",
-			                dir);
+		ASS_STAT(dir, &dir_fs);
+		ASS_UID(dir, dir_fs, uid);
+		ASS_GID(dir, dir_fs, gid);
+		ASS_NWOTH(dir, dir_fs);
 
 		free(dir);
 		free(item);
@@ -819,8 +1200,8 @@ void is_excl_owner_f (int uid, int gid, char *start, char *stop) {
  */
 void is_subdir_f (char *sub, char *super) {
 	char sep = sub[strlen(super)];
-	if (STRNOSTARTW(sub, super) || (sep != '/' && sep != '\0'))
-		ERR_UNAVAILABLE("%s: not in %s.", sub, super);
+	ASSERT(STRSTARTW(sub, super) || (sep == '/' && sep == '\0'),
+	                "%s: not in %s.", sub, super);
 }
 
 /*
@@ -847,29 +1228,37 @@ void is_subdir_f (char *sub, char *super) {
  *    - <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_437>
  */
 int is_portable_name (char *str) {
+	int len = strlen(str);
+	if (len == 0)
+		return -1;
+
+	int c = (char) str[0];
+	if (
+		// A-Z.
+		!(65 <= c && c <= 90)	&&
+		// a-z.
+		!(97 <= c && c <= 122)	&&
+		// "_"
+		 95 != c
+	) return -1;	
+
 	int i;
-	for (i = 0; i < strlen(str); i++) {
-		int c = (char) str[i];
+	for (i = 1; i < strlen(str); i++) {
+		c = (char) str[i];
 		if (
+			// 0-9.
+			!(48 <= c && c <= 57)	&&
 			// A-Z.
-			(65 <= c && c <= 90)	||
+			!(65 <= c && c <= 90)	&&
 			// a-z.
-			(97 <= c && c <= 122)	||
+			!(97 <= c && c <= 122)	&&
+			// "-"
+			 45 != c		&&
+			// "."
+			 46 != c		&&
 			// "_"
-			 95 == c
-		)
-			continue;
-		if (
-			i == 0 && !(
-				// 0-9.
-				(48 <= c && c <= 57)	||
-				// "-"
-				45 == c			||
-				// "."
-				46 == c
-			)
-		)
-			return -1;
+			 95 != c
+		) return -1;
 	}
 	return 0;
 }
@@ -939,18 +1328,16 @@ int main (int argc, const char *argv[]) {
 				break;
 			*path++;
 		}
-		if (!prog_path)
-			ERR_UNAVAILABLE("failed to find myself.");
+		ASSERT(prog_path, "failed to find myself.");
 
 		int len = strlen(prog_path);
-		if (len == 0)
-			ERR_UNAVAILABLE("%s: canonical path is empty.", prog_path);
-		if (len > CR_PATH_MAX)
-			ERR_UNAVAILABLE("%s: canonical path too long.", prog_path);
+		ASSERT(len > 0,
+		                "%s: canonical path is empty.", prog_path);
+		ASSERT(len <= CR_PATH_MAX,
+		                "%s: canonical path too long.", prog_path);
 
 		struct stat fs;
-		if(stat(prog_path, &fs) != 0)
-			ERR_UNAVAILABLE("stat: %s: %s.", strerror(errno));
+		ASS_STAT(prog_path, &fs);
 	}
 
 	if (!prog_name)
@@ -979,7 +1366,6 @@ int main (int argc, const char *argv[]) {
 				char *sep = strstr(*env_p, "=");
 				if (!sep || sep == *env_p)
 					goto next;
-
 				char *val = sep + 1;
 				if (val == *env_p + len)
 					goto next;
@@ -988,9 +1374,7 @@ int main (int argc, const char *argv[]) {
 				// *env_p turns into the variable name.
 				sep[0] = '\0';
 				
-				if (setenv(*env_p, val, 0) != 0)
-					ERR_UNAVAILABLE("failed to set %s: %s.",
-					                env_p, strerror(errno));
+				setenv_f(*env_p, val, 0);
 				goto next;
 			}
 			*safe++;
@@ -999,8 +1383,7 @@ int main (int argc, const char *argv[]) {
 		*env_p++;
 	}
 
-	if (setenv("PATH", SECURE_PATH, 1) != 0)
-		ERR_UNAVAILABLE("failed to set PATH: %s.", strerror(errno));
+	setenv_f("PATH", SECURE_PATH, 1);
 
 
 	/*
@@ -1009,8 +1392,7 @@ int main (int argc, const char *argv[]) {
 	 */
 
 	// Needed for `path_max` to be accurate.
-	if (chdir("/") != 0)
-		ERR_UNAVAILABLE("chdir /: %s", strerror(errno));
+	ASSERT(chdir("/") == 0, "chdir /: %s", strerror(errno));
 
 
 	/*
@@ -1018,179 +1400,61 @@ int main (int argc, const char *argv[]) {
 	 * -------------------
 	 */
 
-	#ifdef CGI_HANDLER
-		if (STREQ(CGI_HANDLER, ""))
-			ERR_CONFIG("CGI_HANDLER: is the empty string.");
+	// CGI_HANDLER.
+	ASS_CONF_NEMPTY(CGI_HANDLER);
 
-		char *restrict cgi_handler = realpath_f(CGI_HANDLER);
-		if (STRNE(CGI_HANDLER, cgi_handler))
-			ERR_CONFIG("CGI_HANDLER: %s: not a canonical path.",
-			           CGI_HANDLER);
-		free(cgi_handler); cgi_handler = NULL;
-		
-		is_excl_owner_f(0, 0, CGI_HANDLER, NULL);
-
-		struct stat cgi_handler_fs;
-		if (stat(CGI_HANDLER, &cgi_handler_fs) != 0)
-			ERR_UNAVAILABLE("%s: %s.",
-			                CGI_HANDLER, strerror(errno));
-
-		if (!S_ISREG(cgi_handler_fs.st_mode))
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: not a regular file.",
-			                CGI_HANDLER);
-		if (cgi_handler_fs.st_uid != 0)
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: UID not 0.",
-			                CGI_HANDLER);
-		if (cgi_handler_fs.st_gid !=0)
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: GID not 0.",
-			                CGI_HANDLER);
-		if (cgi_handler_fs.st_mode & S_IWOTH)
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: is world-writable.",
-			                CGI_HANDLER);
-		if (cgi_handler_fs.st_mode & S_ISUID)
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: has its set-UID-bit set.",
-			                CGI_HANDLER);
-		if (cgi_handler_fs.st_mode & S_ISGID)
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: has its set-GID-bit set.",
-			                CGI_HANDLER);
-		if (!(cgi_handler_fs.st_mode & S_IXOTH))
-			ERR_UNAVAILABLE("CGI_HANDLER: %s: not world-executable.",
-			                CGI_HANDLER);
-	#else
-		ERR_USAGE("CGI_HANDLER: not defined.")
-	#endif
-			
-	#ifdef SCRIPT_MIN_UID
-		if (SCRIPT_MIN_UID < 1)
-			ERR_CONFIG("SCRIPT_MIN_UID: must be greater than 0.");
-		#ifdef UID_MAX
-			if (SCRIPT_MIN_UID > UID_MAX)
-				ERR_CONFIG("SCRIPT_MIN_UID: must not be greater than %d.",
-				           UID_MAX);
-		#endif
-					
-		#ifdef SCRIPT_MAX_UID
-			if (SCRIPT_MIN_GID >= SCRIPT_MAX_UID)
-				ERR_CONFIG("SCRIPT_MIN_GID: must be smaller than SCRIPT_MAX_UID.");
-		#endif
-	#else
-		ERR_USAGE("SCRIPT_MIN_UID: not defined.")
-	#endif
-
-	#ifdef SCRIPT_MIN_GID
-		if (SCRIPT_MIN_GID < 1)
-			ERR_CONFIG("SCRIPT_MIN_GID: must be greater than 0.");
-		#ifdef GID_MAX
-			if (SCRIPT_MIN_GID > GID_MAX)
-				ERR_CONFIG("SCRIPT_MIN_GID: must not be greater than %d.",
-				           GID_MAX);
-		#endif
-							
-		#ifdef SCRIPT_MAX_GID
-			if (SCRIPT_MIN_GID >= SCRIPT_MAX_GID)
-				ERR_CONFIG("SCRIPT_MIN_GID: must be smaller than SCRIPT_MAX_GID.");
-		#endif
-	#else
-		ERR_CONFIG("SCRIPT_MIN_GID: not defined.")
-	#endif
-
-	#ifdef SCRIPT_MAX_UID
-		if (SCRIPT_MAX_UID < 1)
-			ERR_CONFIG("SCRIPT_MAX_UID: must be greater than 0.");
-		#ifdef UID_MAX
-			if (SCRIPT_MAX_UID > UID_MAX)
-				ERR_CONFIG("SCRIPT_MAX_UID: must not be greater than %d.",
-				           UID_MAX);
-		#endif
-	#else
-		ERR_CONFIG("SCRIPT_MAX_UID: not defined.")
-	#endif
-
-	#ifdef SCRIPT_MAX_GID
-		if (SCRIPT_MAX_GID < 1)
-			ERR_CONFIG("SCRIPT_MAX_GID: must be greater than 0.");
-		#ifdef GID_MAX
-			if (SCRIPT_MAX_GID > GID_MAX)
-				ERR_CONFIG("SCRIPT_MAX_GID: must not be greater than %d.",
-				           GID_MAX);
-		#endif
-	#else
-		ERR_CONFIG("SCRIPT_MAX_GID: not defined.")
-	#endif
-
-	#ifdef SCRIPT_BASE_DIR
-		if (STREQ(SCRIPT_BASE_DIR, ""))
-			ERR_CONFIG("SCRIPT_BASE_DIR: is the empty string.");
-
-		char *restrict script_base_dir = realpath_f(SCRIPT_BASE_DIR);
-		if (STRNE(SCRIPT_BASE_DIR, script_base_dir))
-			ERR_CONFIG("%s: not a canonical path.",
-			           SCRIPT_BASE_DIR);
-		free(script_base_dir); script_base_dir = NULL;
+	char *restrict cgi_handler = NULL;;
+	ASS_CANON(cgi_handler, CGI_HANDLER);
+	free(cgi_handler); cgi_handler = NULL;
 	
-		is_excl_owner_f(0, 0, SCRIPT_BASE_DIR, NULL);
+	is_excl_owner_f(0, 0, CGI_HANDLER, NULL);
 
-		struct stat script_base_dir_fs;
-		if (stat(SCRIPT_BASE_DIR, &script_base_dir_fs) != 0)
-			ERR_UNAVAILABLE("%s: %s.",
-			                SCRIPT_BASE_DIR, strerror(errno));
+	struct stat cgi_handler_fs;
+	ASS_STAT(CGI_HANDLER, &cgi_handler_fs);
+	ASS_ISREG(CGI_HANDLER, cgi_handler_fs);
+	ASS_UID(CGI_HANDLER, cgi_handler_fs, 0);
+	ASS_GID(CGI_HANDLER, cgi_handler_fs, 0);
+	ASS_NWOTH(CGI_HANDLER, cgi_handler_fs);
+	ASS_NSUID(CGI_HANDLER, cgi_handler_fs);
+	ASS_NSGID(CGI_HANDLER, cgi_handler_fs);
+	ASS_IXOTH(CGI_HANDLER, cgi_handler_fs);
 
-		if (!S_ISDIR(script_base_dir_fs.st_mode))
-			ERR_UNAVAILABLE("%s: not a directory.",
-			                SCRIPT_BASE_DIR);
-		if (script_base_dir_fs.st_uid != 0)
-			ERR_UNAVAILABLE("%s: UID not 0.",
-			                SCRIPT_BASE_DIR);
-		if (script_base_dir_fs.st_gid !=0)
-			ERR_UNAVAILABLE("%s: GID not 0.",
-			                SCRIPT_BASE_DIR);
-		if (script_base_dir_fs.st_mode & S_IWOTH)
-			ERR_UNAVAILABLE("%s: is world-writable.",
-			                SCRIPT_BASE_DIR);
-		if (!(script_base_dir_fs.st_mode & S_IXOTH))
-			ERR_UNAVAILABLE("%s: is not world-executable.",
-			                SCRIPT_BASE_DIR);
-	#else
-		ERR_CONFIG("SCRIPT_BASE_DIR: not defined.")
-	#endif
+	// DATE_FORMAT.
+	ASS_CONF_NEMPTY(DATE_FORMAT);
 
-	#ifdef SCRIPT_SUFFIX
-		ASS_USAGE(STRNE(SCRIPT_SUFFIX, ""),
-		          "SCRIPT_SUFFIX: is the empty string.");
-	#else
-		ERR_CONFIG("SCRIPT_SUFFIX: not defined.")
-	#endif
+	// SCRIPT_BASE_DIR.
+	ASS_CONF_NEMPTY(SCRIPT_BASE_DIR);
 
-	#ifdef SECURE_PATH
-		ASS_USAGE(strlen(SECURE_PATH) >= CR_SECURE_PATH_MAX,
-		          "SECURE_PATH: is too long.");
-	#else
-		ERR_CONFIG("SECURE_PATH: not defined.")
-	#endif
+	char *restrict script_base_dir = NULL;		
+	ASS_CANON(script_base_dir, SCRIPT_BASE_DIR);
+	free(script_base_dir); script_base_dir = NULL;
 
-	#ifdef WWW_USER
-		if (STREQ(WWW_USER, ""))
-			ERR_CONFIG("WWW_USER: is the empty string.");
-		if (is_portable_name(WWW_USER) != 0)
-			ERR_CONFIG("%s: invalid username.", WWW_USER);
-		pwd = getpwnam(WWW_USER); 
-		if (!pwd)
-			ERR_NOUSER("%s: no such user.", WWW_USER);
-	#else
-		ERR_CONFIG("WWW_USER: not defined.")
-	#endif
+	is_excl_owner_f(0, 0, SCRIPT_BASE_DIR, NULL);
 
-	#ifdef WWW_GROUP
-		if (STREQ(WWW_GROUP, ""))
-			ERR_CONFIG("WWW_GROUP: is the empty string.");
-		if (is_portable_name(WWW_GROUP) != 0)
-			ERR_CONFIG("%s: invalid username.", WWW_GROUP);
-		grp = getgrnam(WWW_GROUP);
-		if (!grp)
-			ERR_NOUSER("%s: no such group.", WWW_GROUP);
-	#else
-		ERR_CONFIG("WWW_GROUP: not defined.")
-	#endif
+	struct stat script_base_dir_fs;
+
+	ASS_STAT(SCRIPT_BASE_DIR, &script_base_dir_fs);
+	ASS_ISDIR(SCRIPT_BASE_DIR, script_base_dir_fs);
+	ASS_UID(SCRIPT_BASE_DIR, script_base_dir_fs, 0);
+	ASS_GID(SCRIPT_BASE_DIR, script_base_dir_fs, 0);
+	ASS_NWOTH(SCRIPT_BASE_DIR, script_base_dir_fs);
+
+	// SCRIPT_SUFFIX.
+	ASS_CONF_NEMPTY(SCRIPT_SUFFIX);
+
+	// SECURE_PATH.
+	if (strlen(SECURE_PATH) > CR_SECURE_PATH_MAX)
+		ERR_CONFIG("SECURE_PATH: is too long.");
+
+	// WWW_USER.
+	ASS_CONF_NEMPTY(WWW_USER);
+	ASS_PORTNAME(WWW_USER);
+	ASS_USER_EXISTS(pwd, WWW_USER);
+
+	// WWW_GROUP.
+	ASS_CONF_NEMPTY(WWW_GROUP);
+	ASS_PORTNAME(WWW_GROUP);
+	ASS_GROUP_EXISTS(grp, WWW_GROUP);
 
 	// Needed later.
 	int www_uid = pwd->pw_uid;
@@ -1212,18 +1476,12 @@ int main (int argc, const char *argv[]) {
 	is_excl_owner_f(0, 0, prog_path, NULL);
 
 	struct stat prog_fs;
-	if (stat(prog_path, &prog_fs) != 0)
-		ERR_UNAVAILABLE("%s: %s.", prog_path, strerror(errno));
-
-	if (prog_fs.st_uid != 0)
-		ERR_UNAVAILABLE("%s: UID not 0.", prog_path);
-	if (prog_fs.st_gid != www_gid)
-		ERR_UNAVAILABLE("%s: GID not %d.", prog_path, www_gid);
-	if (prog_fs.st_mode & S_IWOTH)
-		ERR_UNAVAILABLE("%s: is world-writable.", prog_path);
-	if (prog_fs.st_mode & S_IXOTH)
-		ERR_UNAVAILABLE("%s: is world-executable.", prog_path);
-
+	ASS_STAT(prog_path, &prog_fs);
+	ASS_ISREG(prog_path, prog_fs);
+	ASS_UID(prog_path, prog_fs, 0);
+	ASS_GID(prog_path, prog_fs, 0);
+	ASS_NWOTH(prog_path, prog_fs);
+	ASS_NXOTH(prog_path, prog_fs);
 
 
 	/*
@@ -1231,15 +1489,11 @@ int main (int argc, const char *argv[]) {
 	 * -----------------
 	 */
 
-	char *path_translated = NULL;
-	path_translated = getenv("PATH_TRANSLATED");
-	ASS_USAGE(path_translated != NULL, "PATH_TRANSLATED: not set.");
-	ASS_USAGE(STRNE(path_translated, ""), "PATH_TRANSLATED: is empty.");
+	char *path_translated_e = NULL;
+	path_translated_e = getenv_f("PATH_TRANSLATED");
 	
-	char *restrict script_path = realpath_f(path_translated);
-	if (STRNE(path_translated, script_path))
-		ERR_UNAVAILABLE("PATH_TRANSLATED: %s: not a canonical path.",
-		                path_translated);
+	char *restrict script_path = NULL;
+	ASS_CANON(script_path, path_translated_e);
 
 
 	/*
@@ -1248,43 +1502,31 @@ int main (int argc, const char *argv[]) {
 	 */
 
 	struct stat script_fs;
-	if (stat(script_path, &script_fs) != 0)
-		ERR_UNAVAILABLE("%s: %s.", script_path, strerror(errno));
+	ASS_STAT(script_path, &script_fs);
+	ASS_ISREG(script_path, script_fs);
+	ASSERT(script_fs.st_uid != 0,
+	                "%s: UID is 0.", script_path);
+	ASSERT(script_fs.st_gid != 0,
+	                "%s: GID is 0.", script_path);
+	ASSERT(script_fs.st_uid >= SCRIPT_MIN_UID &&
+	                script_fs.st_uid <= SCRIPT_MAX_UID,
+	                "%s: UID is privileged.", script_path);
+	ASSERT(script_fs.st_gid >= SCRIPT_MIN_GID &&
+	                script_fs.st_gid <= SCRIPT_MAX_GID,
+	                "%s: GID is privileged.", script_path);
 
-	if (script_fs.st_uid == 0)
-		ERR_UNAVAILABLE("%s: UID is 0.", script_path);
-	if (script_fs.st_gid == 0)
-		ERR_UNAVAILABLE("%s: GID is 0.", script_path);
-	if (
-		script_fs.st_uid < SCRIPT_MIN_UID ||
-		script_fs.st_uid > SCRIPT_MAX_UID
-	)
-		ERR_UNAVAILABLE("%s: UID is privileged.", script_path);
-	if (
-		script_fs.st_gid < SCRIPT_MIN_GID ||
-		script_fs.st_uid > SCRIPT_MAX_GID
-	)
-		ERR_UNAVAILABLE("%s: GID is privileged.", script_path);
+	ASS_UID_EXISTS(pwd, script_fs.st_uid);
+	ASS_PORTNAME(pwd->pw_name);
 
-	pwd = getpwuid(script_fs.st_uid);
-	if (!pwd)
-		ERR_OSERR("%s: UID %d: no such user.",
-		          script_path, script_fs.st_uid);
-	if (is_portable_name(pwd->pw_name) != 0)
-		ERR_UNAVAILABLE("%s: invalid username.", pwd->pw_name);
+	ASS_GID_EXISTS(grp, script_fs.st_gid);
+	ASS_PORTNAME(grp->gr_name);
 
-	grp = getgrgid(script_fs.st_gid);
-	if (!grp)
-		ERR_OSERR("%s: GID %d: no such group.",
-		          script_path, script_fs.st_uid);
-	if (is_portable_name(grp->gr_name) != 0)
-		ERR_UNAVAILABLE("%s: invalid groupname.", grp->gr_name);
-	if (script_fs.st_gid != pwd->pw_gid)
-		ERR_UNAVAILABLE("%s: GID %d: not %s's primary group.",
-		                script_path, script_fs.st_gid, pwd->pw_name);
+	ASSERT(script_fs.st_gid == pwd->pw_gid,
+	       "%s: GID %d: not %s's primary group.",
+	       script_path, script_fs.st_gid, pwd->pw_name);
 
-	// pwd and grp are not cleared because
-	// we might need them for initgroups()
+	// `pwd` and `grp` are not cleared because
+	// we might need them for `initgroups`
 	// when dropping privileges. 
 
 
@@ -1293,8 +1535,8 @@ int main (int argc, const char *argv[]) {
 	 * ---------------
 	 */
 
-	// This section uses setgroups() or initgroups(),
-	// neither of which is part of POSIX.
+	// This section uses `setgroups` or `initgroups`,
+	// neither of which is part of POSIX.1-2018.
 
 	#ifdef NO_SETGROUPS
 		if (initgroups(pwd->pw_name, script_fs.st_gid) != 0)
@@ -1340,40 +1582,27 @@ int main (int argc, const char *argv[]) {
 
 	is_subdir_f(script_path, SCRIPT_BASE_DIR);
 
-	char *restrict home_dir = realpath_f(pwd->pw_dir);
-	if (STRNE(pwd->pw_dir, home_dir))
-		ERR_UNAVAILABLE("%s: not a canonical path.", pwd->pw_dir);
+	char *restrict home_dir = NULL;
+	ASS_CANON(home_dir, pwd->pw_dir);
 	free(home_dir); home_dir = NULL;
 
 	is_subdir_f(script_path, pwd->pw_dir);
 
-	char *document_root = NULL;
-	document_root = getenv("DOCUMENT_ROOT");
-	if (document_root == NULL)
-		ERR_UNAVAILABLE("DOCUMENT_ROOT: not set.");
-	if (STREQ(document_root, ""))
-		ERR_UNAVAILABLE("DOCUMENT_ROOT: is empty.");
+	char *document_root_e = NULL;
+	document_root_e = getenv_f("DOCUMENT_ROOT");
 
-	char *restrict canonical_document_root = realpath_f(document_root);
-	if (STRNE(document_root, canonical_document_root))
-		ERR_UNAVAILABLE("DOCUMENT_ROOT: %s: not a canonical path.",
-		                document_root);
-	free(canonical_document_root); canonical_document_root = NULL;
-
+	char *restrict document_root = NULL;
+	ASS_CANON(document_root, document_root_e);
 	is_subdir_f(script_path, document_root);
 	free(document_root); document_root = NULL;
 
 	is_excl_owner_f(script_fs.st_uid, script_fs.st_gid,
 	                script_path, pwd->pw_dir);
-	is_excl_owner_f(0, 0,
-		        pwd->pw_dir, NULL);
+	is_excl_owner_f(0, 0, pwd->pw_dir, NULL);
 
-	if (script_fs.st_mode & S_IWOTH)
-		ERR_UNAVAILABLE("%s: is world-writable.", script_path);
-	if (script_fs.st_mode & S_ISUID)
-		ERR_UNAVAILABLE("%s: has its set-UID-bit set.", script_path);
-	if (script_fs.st_mode & S_ISGID)
-		ERR_UNAVAILABLE("%s: has its set-GID-bit set.", script_path);
+	ASS_NWOTH(script_path, script_fs);
+	ASS_NSUID(script_path, script_fs);
+	ASS_NSGID(script_path, script_fs);
 
 
 	/*
@@ -1382,12 +1611,10 @@ int main (int argc, const char *argv[]) {
 	 */
 
 	char *suffix = strrchr(script_path, '.');
-	ASS_USAGE(suffix,
-	          "%s: has no filename ending.",
-	          script_path);
-	ASS_USAGE(STREQ(suffix, SCRIPT_SUFFIX),
-	          "%s: does not end with \"%s\".",
-	          script_path, SCRIPT_SUFFIX);
+	ASSERT(suffix, "%s: has no filename ending.", script_path);
+	ASSERT(STREQ(suffix, SCRIPT_SUFFIX),
+	       "%s: does not end with \"%s\".",
+	       script_path, SCRIPT_SUFFIX);
 
 
 	/*

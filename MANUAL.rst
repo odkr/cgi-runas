@@ -174,7 +174,8 @@ Self-checks:
    the parent directory of that directory, and so on,
    owned by the superuser and the supergroup and
    *not* world-writable?
-2. Is **cgi-runas** itself owned by the superuser and **WWW_GROUP** and
+2. Is **cgi-runas** a regular file?
+3. Is **cgi-runas** itself owned by the superuser and **WWW_GROUP** and
    neither world-writable nor world-executable?
 
 Permission checks:
