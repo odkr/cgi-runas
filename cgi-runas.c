@@ -1325,7 +1325,7 @@ int main (int argc, const char *argv[]) {
 				prog_path = realpath(*path, NULL);
 			if (prog_path)
 				break;
-			*path++;
+			path++;
 		}
 		ASSERT(prog_path, "failed to find myself.");
 
@@ -1359,7 +1359,7 @@ int main (int argc, const char *argv[]) {
 				while (*unsafe) {
 					if (STRSTARTW(*env_p, *unsafe))
 						goto next;
-					*unsafe++;
+					unsafe++;
 				}
 
 				char *sep = strstr(*env_p, "=");
@@ -1376,10 +1376,10 @@ int main (int argc, const char *argv[]) {
 				setenv_f(*env_p, val, 0);
 				goto next;
 			}
-			*safe++;
+			safe++;
 		}
 		next:
-		*env_p++;
+		env_p++;
 	}
 
 	setenv_f("PATH", SECURE_PATH, 1);
