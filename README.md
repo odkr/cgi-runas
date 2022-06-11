@@ -15,19 +15,16 @@ See the [manual](MANUAL.rst) for details.
 
 ## Requirements
 
-**cgi-runas** requires an operating system that:
+**cgi-runas** requires an operating system that complies with
+[POSIX.1-2018](https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/).
 
-1. complies with
-   [POSIX.1-2018](https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/),
-2. supports the
-   [setgroups](https://man7.org/linux/man-pages/man2/setgroups.2.html)
-   and the
-   [clearenv](https://man7.org/linux/man-pages/man3/clearenv.3.html)
-   system calls, and
-3. has a
-   [proc](https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html)
-   filesystem mounted on */proc*.
-
+Ideally, your system supports the
+[setgroups](https://man7.org/linux/man-pages/man2/setgroups.2.html)
+and the
+[clearenv](https://man7.org/linux/man-pages/man3/clearenv.3.html)
+system calls and has a
+[proc](https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html)
+filesystem mounted on */proc*.
 Linux-based operating systems should meet those requirements.
 
 
@@ -81,9 +78,9 @@ make
 ```
 
 If your operating system does not support **clearenv**, **setgroups**,
-or the proc filesystem, you can disable them using these macros:
+or the proc filesystem, you can disable them using these flags:
 
-| Macro        | Description                                |
+| Flag         | Description                                |
 | ------------ | ------------------------------------------ |
 | NO_CLEARENV  | Clear the environment by `environ = NULL`. |
 | NO_PROCFS    | Don't use */proc*.                         |
