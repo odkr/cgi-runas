@@ -35,8 +35,8 @@ Linux-based operating systems should meet those requirements.
 ## Installation 
 
 You use **cgi-runas** at your own risk!
-That risk is considerable
-(see the **SECURITY** section in the [manual](MANUAL.rst)).
+That risk is *considerable*.
+See **SECURITY** in the [manual](MANUAL.rst) for details.
 
 ----
 
