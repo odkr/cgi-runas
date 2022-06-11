@@ -83,11 +83,11 @@ make
 If your operating system does not support **clearenv**, **setgroups**,
 or the proc filesystem, you can disable them using the these macros:
 
-| Macro        | Description               |
-| ------------ | ------------------------- |
-| NO_CLEARENV  | Don't call **clearenv**.  |
-| NO_PROCFS    | Don't use */proc*.        |
-| NO_SETGROUPS | Don't call **setgroups**. |
+| Macro        | Description                                |
+| ------------ | ------------------------------------------ |
+| NO_CLEARENV  | Clear the environment by `environ = NULL`. |
+| NO_PROCFS    | Don't use */proc*.                         |
+| NO_SETGROUPS | Don't call **setgroups**.                  |
 
 For example:
 
