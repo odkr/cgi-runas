@@ -903,9 +903,13 @@ int main (void) {
 	// > info. Bad news if MALLOC_DEBUG_FILE is set to /etc/passwd.)
 
 	char **env_p = environ;
-	char *empty = NULL;
 	
-	clearenv();
+	#ifdef NO_CLEARENV
+		char *empty = NULL;
+		environ = &empty;		
+	#else
+		clearenv();
+	#endif
 
 
 	/*
@@ -925,11 +929,13 @@ int main (void) {
 	// This section depends on /proc.
 	// There is no other, reliable, way to find a process' executable.
 
-	if (!prog_path)
-		prog_path = realpath_f(CR_SELF_EXE);
+	#if !defined(NO_PROCFS)
+		if (!prog_path)
+			prog_path = realpath_f(CR_SELF_EXE);
 
-	if (!prog_name)
-		prog_name = basename(prog_path);
+		if (!prog_name)
+			prog_name = basename(prog_path);
+	#endif
 
 
 	/*
@@ -1174,20 +1180,23 @@ int main (void) {
 	// to begin with, of course. Their purpose is to force the user
 	// to secure their setup.
 
-	is_excl_owner_f(0, 0, prog_path, NULL);
+	#ifdef CR_PROFCS
+		is_excl_owner_f(0, 0, prog_path, NULL);
 
-	struct stat prog_fs;
-	if (stat(prog_path, &prog_fs) != 0)
-		ERR_UNAVAILABLE("%s: %s.", prog_path, strerror(errno));
+		struct stat prog_fs;
+		if (stat(prog_path, &prog_fs) != 0)
+			ERR_UNAVAILABLE("%s: %s.", prog_path, strerror(errno));
 
-	if (prog_fs.st_uid != 0)
-		ERR_UNAVAILABLE("%s: UID not 0.", prog_path);
-	if (prog_fs.st_gid != www_gid)
-		ERR_UNAVAILABLE("%s: GID not %d.", prog_path, www_gid);
-	if (prog_fs.st_mode & S_IWOTH)
-		ERR_UNAVAILABLE("%s: is world-writable.", prog_path);
-	if (prog_fs.st_mode & S_IXOTH)
-		ERR_UNAVAILABLE("%s: is world-executable.", prog_path);
+		if (prog_fs.st_uid != 0)
+			ERR_UNAVAILABLE("%s: UID not 0.", prog_path);
+		if (prog_fs.st_gid != www_gid)
+			ERR_UNAVAILABLE("%s: GID not %d.", prog_path, www_gid);
+		if (prog_fs.st_mode & S_IWOTH)
+			ERR_UNAVAILABLE("%s: is world-writable.", prog_path);
+		if (prog_fs.st_mode & S_IXOTH)
+			ERR_UNAVAILABLE("%s: is world-executable.", prog_path);
+	#endif
+
 
 	/*
 	 * Get script's path
@@ -1259,10 +1268,13 @@ int main (void) {
 
 	// This section uses setgroups(), which is non-POSIX.
 
-	const gid_t groups[] = {};
-	if (setgroups(0, groups) != 0)
-		ERR_UNAVAILABLE("setgroups: %s.",
-		                strerror(errno));
+	#if !defined(NO_SETGROUPS)
+		const gid_t groups[] = {};
+		if (setgroups(0, groups) != 0)
+			ERR_UNAVAILABLE("setgroups: %s.",
+			                strerror(errno));
+	#endif
+
 	if (setgid(script_fs.st_gid) != 0)
 		ERR_UNAVAILABLE("setgid %d: %s.",
 		                script_fs.st_gid, strerror(errno));

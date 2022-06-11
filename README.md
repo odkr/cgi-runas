@@ -29,7 +29,6 @@ See the [manual](MANUAL.rst) for details.
    filesystem mounted on */proc*.
 
 Linux-based operating systems should meet those requirements.
-**cgi-runas** has been tested on Debian GNU/Linux.
 
 
 ## Installation 
@@ -79,6 +78,21 @@ Once you are done, compile **cgi-runas** by:
 
 ```sh
 make
+```
+
+If your operating system does not support **clearenv**, **setgroups**,
+or the proc filesystem, you can disable them using the following macros:
+
+| Macro        | Description               |
+| ------------ | ------------------------- |
+| NO_CLEARENV  | Don't call **clearenv**.  |
+| NO_PROCFS    | Don't use */proc*.        |
+| NO_SETGROUPS | Don't call **setgroups**. |
+
+For example:
+
+```sh
+make CFLAGS="-DNO_PROCFS -DNO_CLEARENV"
 ```
 
 There should now be an executable **cgi-runas** in
