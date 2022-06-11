@@ -103,7 +103,6 @@ you can disable them using these flags:
 | NO_CLEARENV   | Clear the environment by `environ = NULL`.   |
 | NO_SETGROUPS  | Use **initgroups** instead of **setgroups**. |
 
-
 For example:
 
 ```sh
