@@ -233,8 +233,7 @@
  *
  * The maximum length for environment variables.
  */
-#define CR_ENVVAR_MAX = CR_ENVVAR_NAME_MAX + CR_ENVVAR_VALUE_MAX + 1
-
+#define CR_ENVVAR_MAX (CR_ENVVAR_NAME_MAX + CR_ENVVAR_VALUE_MAX + 1)
 
 /*
  * Constant: CR_SELF_EXE
@@ -1045,7 +1044,7 @@ char *getenv_f (char *var) {
 	ASSERT(value, "%s: not set.", *var);
 	ASSERT(STRNE(value, ""), "%s: is empty.", *var);
 	ASSERT(strnlen(value, CR_ENVVAR_VALUE_MAX) < CR_ENVVAR_VALUE_MAX,
-	       "%s: value too long.", *var)
+	       "%s: value too long.", *var);
 	return value;
 }
 
@@ -1176,7 +1175,7 @@ char *realpath_f (char *path) {
 	int bufsize = PATH_MAX + 1;
 	if (bufsize < 8192) bufsize = 8192;
 	// flawfinder: ignore
-	char buf[bufsize] = {};
+	char buf[bufsize];
 
 	// Safeguards against bad realpath implementations are in place.
 	// flawfinder: ignore
@@ -1286,7 +1285,7 @@ void is_subdir_f (char *sub, char *super) {
  */
 int is_safe_name (char *str) {
 	// FIXME use LOGIN_NAME_MAX and strnlen
-	int len = strnlen(str);
+	int len = strlen(str);
 	if (len == 0)
 		return -1;
 
@@ -1382,7 +1381,7 @@ int main (int argc, const char *argv[]) {
 		int bufsize = PATH_MAX + 1;
 		if (bufsize < 8192) bufsize = 8192;
 		// flawfinder: ignore
-		char buf[bufsize] = {};
+		char buf[bufsize];
 
 		char *restrict real = NULL;
 		while (*path) {
