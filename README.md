@@ -15,14 +15,20 @@ of their owner, that is, similar to how you would have used
 [suPHP](https://smarsching.github.io/suphp/Home.html), if you set up [PHP as
 CGI handler](https://www.php.net/manual/en/install.unix.commandline.php).
 
-**cgi-runas** *aims* to achieve security by being correct, following best
-practices, and by being easy to use. It *tries* to comply with POSIX.1-2018
-and implements similar, but more modern and more paranoid, mechanims as
-[Apache's suEXEC](https://httpd.apache.org/docs/2.4/suexec.html).
-However, it has *neither* been thoroughly tested *nor* audited and has
-seen no real-world usage.
-
 See the [manual](MANUAL.rst) for details.
+
+
+## Security
+
+**cgi-runas** *aims* to achieve security by being correct, following
+best practices, and by being easy to use. It implements similar,
+but slightly updated and more paranoid, mechanims as
+[Apache's suEXEC](https://httpd.apache.org/docs/2.4/suexec.html).
+However, it has *neither* been thoroughly tested *nor* audited and
+has seen little real-world usage.
+
+See **SECRUITY** in the [manual](MANUAL.rst) for details.
+
 
 ## Requirements
 
@@ -43,7 +49,6 @@ Linux-based operating systems should meet those requirements.
 
 You use **cgi-runas** at your own risk!
 That risk is *considerable*.
-See **SECURITY** in the [manual](MANUAL.rst) for details.
 
 ----
 
