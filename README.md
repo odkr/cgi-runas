@@ -5,14 +5,15 @@
 
 Run CGI scripts under the UID and GID of their owner.
 
-**cgi-runas** checks if the script file pointed to by the environment variable
-`PATH_TRANSLATED` is secure, sets the process' effective UID and GID to
-the UID and the GID of the script's owner, cleans up the environment, and then
-executes the actual CGI handler.
+**cgi-runas** checks if the script file pointed to by the environment
+variable `PATH_TRANSLATED` is secure, sets the process' effective UID
+and GID to the UID and the GID of the script's owner, cleans up the
+environment, and then executes the actual CGI handler.
 
-If you set up 
-[PHP as CGI handler](https://www.php.net/manual/en/install.unix.commandline.php),
-you can use **cgi-runas** to run PHP scripts under the UID and GID of their owner.
+You can use **cgi-runas** to run PHP scripts under the UID and GID of their
+owner, similar to how [suPHP](https://smarsching.github.io/suphp/Home.html)
+used to work if you set up [PHP as CGI handler]
+(https://www.php.net/manual/en/install.unix.commandline.php).
 
 See the [manual](MANUAL.rst) for details.
 
