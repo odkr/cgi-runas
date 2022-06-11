@@ -26,10 +26,9 @@ CONFIGURATION
 before compilation.
 
 **CGI_HANDLER**
-	Path to a programme.
-	Must be a canonical.
-	Should run the file pointed to by the environment variable **PATH_TRANSLATED**.
-	Given neither operands nor options.
+	Path to a programme. Must be a canonical.
+	Should run the file that the environment
+	variable **PATH_TRANSLATED** points to.
 
 **DATE_FORMAT**
 	How to format timestamps in error messages.
@@ -56,7 +55,7 @@ before compilation.
 	High GIDs may be used for the 'nogroup' group and daemons (e.g., libvirtd).
 
 **SCRIPT_BASE_DIR**
-	A directory.
+	A directory. Must be canonical.
 	Only scripts within that directory are run.
 
 **SCRIPT_SUFFIX**
@@ -64,9 +63,8 @@ before compilation.
 	Scripts are only run if their filename ends with this suffix.
 
 **SECURE_PATH**
-	A colon-separated list of directories to search for programmes.
+	A colon-separated list of directories.
 	Overwrites the **PATH** environment variable.
-	Should be set to a list of secure directories.
 
 **WWW_USER**
 	A username.
