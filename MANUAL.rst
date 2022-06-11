@@ -127,10 +127,6 @@ Checks
 
 The following checks are performed before calling **CGI_HANDLER**.
 
-Note that some of these checks are subject to race conditions; that is,
-the system may change between the time they are perfomed and
-the time **CGI_HANDLER** is called.
-
 Configuration checks:
 
 1. Is **CGI_HANDLER** set?
@@ -143,30 +139,31 @@ Configuration checks:
 7. Is it *not* world-writable?
 8. Are its set-UID and set-GID bits unset?
 9. And *is* it world-executable?
-10. Are **SCRIPT_MIN_UID** and **SCRIPT_MAX_UID** set to a UID
+10. Is **DATE_FORMAT** set?
+11. Are **SCRIPT_MIN_UID** and **SCRIPT_MAX_UID** set to a UID
     greater than 0 and smaller than or equal to the system's **MAX_UID**?
-11. Is **SCRIPT_MIN_UID** smaller than **SCRIPT_MAX_UID**?
-12. Are **SCRIPT_MIN_GID** and **SCRIPT_MAX_GID** set to a UID
+12. Is **SCRIPT_MIN_UID** smaller than **SCRIPT_MAX_UID**?
+13. Are **SCRIPT_MIN_GID** and **SCRIPT_MAX_GID** set to a UID
     greater than 0 and smaller than or equal to the system's **MAX_GID**?
-13. Is **SCRIPT_MIN_GID** smaller than **SCRIPT_MAX_GID**?
-14. Is **SCRIPT_BASE_DIR** set?
-15. Does that file exist?
-16. Is its path canonical?
-17. Is its parent directory, the parent directory of that directory, and so on,
+14. Is **SCRIPT_MIN_GID** smaller than **SCRIPT_MAX_GID**?
+15. Is **SCRIPT_BASE_DIR** set?
+16. Does that file exist?
+17. Is its path canonical?
+18. Is its parent directory, the parent directory of that directory, and so on,
     owned by the superuser and the supergroup and *not* world-writable?
-18. Is **SCRIPT_BASE_DIR** itself a directory?
-19. Is it owned by the superuser and the supergroup?
-20. Is it *not* world-writable?
-21. And *is* it world-executable?
-22. Is **SCRIPT_SUFFIX** set?
-23. Is **SECURE_PATH** path set?
-24. Is it suspiciously long?
-25. Is **WWW_USER** set?
-26. Is the given username valid?
-27. Does that user exist?
-28. Is **WWW_GROUP** set?
-29. Is the given groupname valid?
-30. Does that group exist?
+19. Is **SCRIPT_BASE_DIR** itself a directory?
+20. Is it owned by the superuser and the supergroup?
+21. Is it *not* world-writable?
+22. And *is* it world-executable?
+23. Is **SCRIPT_SUFFIX** set?
+24. Is **SECURE_PATH** path set?
+25. Is it suspiciously long?
+26. Is **WWW_USER** set?
+27. Is the given username valid?
+28. Does that user exist?
+29. Is **WWW_GROUP** set?
+30. Is the given groupname valid?
+31. Does that group exist?
 
 Self-checks:
 
@@ -204,8 +201,8 @@ Script checks:
     and *not* world-writable?
 12. Is the script itself *not* world-writable?
 13. Are its set-UID and set-GID bits unset?
-14. Does its filename have a filename ending?
-15. Does that ending equal **SCRIPT_SUFFIX**?
+14. Does its filename have a suffix?
+15. Does that suffix equal **SCRIPT_SUFFIX**?
 
 User and group checks:
 
@@ -224,7 +221,7 @@ Transition checks:
 1. Was dropping the caller's supplementary groups successful?
 2. Was setting the GID to that of the script file successful?
 3. Was setting the UID to that of the script file successful?
-4. Did trying to reset the UID to that of the superuser fail?
+4. Did resetting the UID to that of the superuser fail?
 
 
 CGI
@@ -244,17 +241,17 @@ You need to set up the webserver so that it logs them.
 EXIT STATUSES
 =============
 
-64
-	Usage error.
+66
+	A file could not be read.
 
 67
-	User or group not found.
+	A user or a group were not found.
 
 69
 	Any other error.
 
 70
-	Bug.
+	You found a bug.
 
 71
 	Operating system error.
