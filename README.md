@@ -12,8 +12,8 @@ environment, and then executes the actual CGI handler.
 
 You can use **cgi-runas** to run PHP scripts under the UID and GID of their
 owner, similar to how [suPHP](https://smarsching.github.io/suphp/Home.html)
-used to work if you set up [PHP as CGI handler]
-(https://www.php.net/manual/en/install.unix.commandline.php).
+used to work if you set up [PHP as CGI
+handler](https://www.php.net/manual/en/install.unix.commandline.php).
 
 See the [manual](MANUAL.rst) for details.
 
