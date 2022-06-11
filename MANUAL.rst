@@ -108,16 +108,14 @@ Untested and unaudited
 It has seen no real-world usage. You should assess the code yourself
 and weigh the benefits of using **cgi-runas** against the risks.
 
-Philosophy
-----------
+Introduction
+------------
 
-**cgi-runas** aims to comply with POSIX.1-2018 and extant best practices,
-to improve upon prior art, above all, Apache's suExec, and to be secure
-even in the face of user errors.
-
-It implements most of suExec's safeguards, the exception being calling
-**ufork** on systems that support it, but protects more thoroughly
-against user errors and checks whether privileges can be re-gained.
+**cgi-runas** *aims* to be correct, to follow best practices,
+and to be easy to use. It *tries* to comply with POSIX.1-2018
+and implements similar, but more modern and more paranoid,
+mechanims as Apache's suExec, with the exception of calling
+**ufork** on systems that support it.
 
 Environment
 -----------
