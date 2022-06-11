@@ -81,7 +81,7 @@ make
 ```
 
 If your operating system does not support **clearenv**, **setgroups**,
-or the proc filesystem, you can disable them using the following macros:
+or the proc filesystem, you can disable them using the these macros:
 
 | Macro        | Description               |
 | ------------ | ------------------------- |
