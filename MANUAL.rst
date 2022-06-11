@@ -114,7 +114,7 @@ Introduction
 **cgi-runas** *aims* to achieve security by being correct, following best
 practices, and being easy to use. It *tries* to comply with POSIX.1-2018
 and implements similar, but more modern and more paranoid, mechanims as
-[Apache's suEXEC](https://httpd.apache.org/docs/2.4/suexec.html).
+`Apache's suEXEC <https://httpd.apache.org/docs/2.4/suexec.html>`_.
 
 Environment
 -----------
@@ -267,6 +267,10 @@ EXIT STATUSES
 
 78
 	Configuration error.
+
+
+These statuses conform to the `BSD convention
+<https://www.freebsd.org/cgi/man.cgi?query=sysexits>`_.
 
 
 AUTHOR

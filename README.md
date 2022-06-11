@@ -172,7 +172,7 @@ the [configuration file](config.h) for more details.
 
 ## Contact
 
-If there's something wrong with *cgi-runas*, please
+If there's something wrong with **cgi-runas**, please
 [open an issue](https://github.com/odkr/cgi-runas/issues).
 
 

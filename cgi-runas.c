@@ -45,11 +45,13 @@
  * =========
  */
 
+// Exit statuses conform to the BSD convention.
+// See <https://www.freebsd.org/cgi/man.cgi?query=sysexits>.
+
 /*
  * Constant: EX_USAGE
  *
  * Status to exit with if the user made an error.
- * Conforms to 4.4BSD.
  */
 #define EX_USAGE 64
 
@@ -57,7 +59,6 @@
  * Constant: EX_NOUSER
  *
  * Status to exit with if a user does not exist.
- * Conforms to 4.4BSD.
  */
 #define EX_NOUSER 67
 
@@ -65,7 +66,6 @@
  * Constant: EX_UNAVAILABLE
  *
  * Status to exit with if no other status matches.
- * Conforms to 4.4BSD.
  */
 #define EX_UNAVAILABLE 69
 
@@ -73,7 +73,6 @@
  * Constant: EX_SOFTWARE
  *
  * Status to exit with if the programmer made an error.
- * Conforms to 4.4BSD.
  */
 #define EX_SOFTWARE 70
 
@@ -81,7 +80,6 @@
  * Constant: EX_OSERR
  *
  * Status to exit with an operating system error occurs.
- * Conforms to 4.4BSD.
  */
 #define EX_OSERR 71
 
@@ -89,7 +87,6 @@
  * Constant: EX_NOPERM
  *
  * Status to exit with an operating system error occurs.
- * Conforms to 4.4BSD.
  */
 #define EX_NOPERM 77
 
@@ -97,7 +94,6 @@
  * Constant: EX_CONFIG
  *
  * Status to exit with an the user misconfigured something.
- * Conforms to 4.4BSD.
  */
 #define EX_CONFIG 78
 
