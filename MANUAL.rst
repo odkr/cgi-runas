@@ -31,7 +31,7 @@ before compilation.
 	Should run the file pointed to by the environment variable **PATH_TRANSLATED**.
 	Given neither operands nor options.
 
-**DATA_FORMAT**
+**DATE_FORMAT**
 	How to format timestamps in error messages.
 	See strftime(3) for details.
 
