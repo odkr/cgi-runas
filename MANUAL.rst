@@ -114,8 +114,7 @@ Introduction
 **cgi-runas** *aims* to be correct, to follow best practices,
 and to be easy to use. It *tries* to comply with POSIX.1-2018
 and implements similar, but more modern and more paranoid,
-mechanims as Apache's suExec, with the exception of calling
-**ufork** on systems that support it.
+mechanims as Apache's suExec.
 
 Environment
 -----------
