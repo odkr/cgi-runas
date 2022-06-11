@@ -4,7 +4,8 @@
 #define CGI_HANDLER "/usr/lib/cgi-bin/php"
 
 // How to format timestamps in error messages.
-// See strftime(3) for details.
+// See strftime(3) for the syntax.
+// The formatted timestamp cannot be longer than 128 bytes.
 #define DATE_FORMAT "%b %e %T"
 
 // A user ID (UID).

@@ -320,7 +320,7 @@
  * Do *not* add the empty string.
  * The list must be terminated with `NULL`.
  *
- * It has been adapted from Apache's suExec.
+ * It has been adapted from Apache's suEXEC.
  *
  * See also:
  *
@@ -395,7 +395,7 @@ const char *const safe_env_vars[] =
  * Do *not* add the empty string.
  * The list must be terminated with `NULL`.
  *
- * It has been adapted from Apache's suExec.
+ * It has been adapted from Apache's suEXEC.
  *
  * See also:
  *

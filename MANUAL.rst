@@ -33,6 +33,7 @@ before compilation.
 **DATE_FORMAT**
 	How to format timestamps in error messages.
 	See strftime(3) for the syntax.
+	The formatted timestamp cannot be longer than 128 bytes.
 
 **SCRIPT_MIN_UID**
 	A user ID (UID).
@@ -105,16 +106,15 @@ Untested and unaudited
 ----------------------
 
 **cgi-runas** has *neither* been thoroughly tested, *nor* audited.
-It has seen no real-world usage. You should assess the code yourself
-and weigh the benefits of using **cgi-runas** against the risks.
+It has seen no real-world usage.
 
 Introduction
 ------------
 
-**cgi-runas** *aims* to be correct, to follow best practices,
-and to be easy to use. It *tries* to comply with POSIX.1-2018
-and implements similar, but more modern and more paranoid,
-mechanims as Apache's suExec.
+**cgi-runas** *aims* to achieve security by being correct, following best
+practices, and by being easy to use. It *tries* to comply with POSIX.1-2018
+and implements similar, but more modern and more paranoid, mechanims as
+[Apache's suEXEC](https://httpd.apache.org/docs/2.4/suexec.html).
 
 Environment
 -----------
