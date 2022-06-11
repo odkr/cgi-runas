@@ -1,5 +1,5 @@
 // Absolute path to a programme.
-// Should run the file pointed to by the environment variable PATH_TRANSLATED.
+// Should run the file the environment variable PATH_TRANSLATED points to.
 // No operands or options are passed.
 #define CGI_HANDLER "/usr/lib/cgi-bin/php"
 
@@ -37,7 +37,6 @@
 
 // A colon-separated list of directories.
 // Overwrites the PATH environment variable.
-// Should be set to a list of secure directories.
 #define SECURE_PATH "/usr/bin:/bin"
 
 // A username.

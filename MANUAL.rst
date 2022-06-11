@@ -27,7 +27,7 @@ before compilation.
 
 **CGI_HANDLER**
 	Path to a programme. Must be a canonical.
-	Should run the file that the environment
+	Should run the file the environment
 	variable **PATH_TRANSLATED** points to.
 
 **DATE_FORMAT**
