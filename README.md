@@ -10,10 +10,10 @@ variable `PATH_TRANSLATED` is secure, sets the process' effective UID
 and GID to the UID and the GID of the script's owner, cleans up the
 environment, and then executes the actual CGI handler.
 
-You can use **cgi-runas** to run PHP scripts under the UID and GID of their
-owner, similar to how [suPHP](https://smarsching.github.io/suphp/Home.html)
-used to work if you set up [PHP as CGI
-handler](https://www.php.net/manual/en/install.unix.commandline.php).
+You can use **cgi-runas** to run PHP scripts under the UID and GID
+of their owner, that is, similar to how you would have used
+[suPHP](https://smarsching.github.io/suphp/Home.html), if you set up [PHP as
+CGI handler](https://www.php.net/manual/en/install.unix.commandline.php).
 
 See the [manual](MANUAL.rst) for details.
 
