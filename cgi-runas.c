@@ -162,7 +162,7 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *    The same as <panic>, but without the status.
  */
 #define ERR_USAGE(...) panic(EX_USAGE, __VA_ARGS__)
 
@@ -173,7 +173,7 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *    The same as <panic>, but without the status.
  */
 #define ERR_NOUSER(...) panic(EX_NOUSER, __VA_ARGS__)
 
@@ -184,7 +184,7 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *    The same as <panic>, but without the status.
  */
 #define ERR_UNAVAILABLE(...) panic(EX_UNAVAILABLE, __VA_ARGS__)
 
@@ -195,7 +195,7 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *    The same as <panic>, but without the status.
  */
 #define ERR_SOFTWARE(...) panic(EX_SOFTWARE, __VA_ARGS__)
 
@@ -206,7 +206,7 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *   The same as <panic>, but without the status.
  */
 #define ERR_OSERR(...) panic(EX_OSERR, __VA_ARGS__)
 
@@ -217,7 +217,7 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *    The same as <panic>, but without the status.
  */
 #define ERR_NOPERM(...) panic(EX_NOPERM, __VA_ARGS__)
 
@@ -228,9 +228,23 @@
  *
  * Arguments:
  *
- *    See <panic>.
+ *    The same as <panic>, but without the status.
  */
 #define ERR_CONFIG(...) panic(EX_CONFIG, __VA_ARGS__)
+
+/*
+ * Macro: ASS_USAGE
+ *
+ * Raise a usage error if a condition is false.
+ *
+ * Arguments:
+ *
+ *    cond - A condition.
+ *    ...  - See <ERR_USAGE>.
+ */
+#define ASS_USAGE(cond, ...) if (!(cond)) ERR_UNAVAILABLE(__VA_ARGS__)
+
+// FIXME: Define similar assertions for the other error types.
 
 /*
  * Macro: STREQ
@@ -866,7 +880,7 @@ int is_portable_name (char *str) {
  * ====
  */
 
-int main (void) {
+int main (int argc, const char *argv[]) {
 	/*
 	 * Prelude
 	 * -------
@@ -909,29 +923,38 @@ int main (void) {
 
 
 	/*
-	 * Change working directory
-	 * ------------------------
-	 */
-	
-	// Needed for `path_max` to be accurate.
-	if (chdir("/") != 0)
-		ERR_UNAVAILABLE("chdir /: %s", strerror(errno));
-
-	/*
 	 * Self-discovery
 	 * --------------
 	 */
 
-	// This section depends on /proc.
-	// There is no other, reliable, way to find a process' executable.
-
-	#if !defined(NO_PROCFS)
+	char *restrict prog_path = NULL;
+	if (!prog_path) {
+		const char *const paths[] = {CR_SELF_EXE, argv[0], NULL};
+		const char *const *path = paths;
+		while (*path) {
+			errno = 0;
+			if (*path)
+				prog_path = realpath(*path, NULL);
+			if (prog_path)
+				break;
+			*path++;
+		}
 		if (!prog_path)
-			prog_path = realpath_f(CR_SELF_EXE);
+			ERR_UNAVAILABLE("failed to find myself.");
 
-		if (!prog_name)
-			prog_name = basename(prog_path);
-	#endif
+		int len = strlen(prog_path);
+		if (len == 0)
+			ERR_UNAVAILABLE("%s: canonical path is empty.", prog_path);
+		if (len > CR_PATH_MAX)
+			ERR_UNAVAILABLE("%s: canonical path too long.", prog_path);
+
+		struct stat fs;
+		if(stat(prog_path, &fs) != 0)
+			ERR_UNAVAILABLE("stat: %s: %s.", strerror(errno));
+	}
+
+	if (!prog_name)
+		prog_name = basename(prog_path);
 
 
 	/*
@@ -978,6 +1001,16 @@ int main (void) {
 
 	if (setenv("PATH", SECURE_PATH, 1) != 0)
 		ERR_UNAVAILABLE("failed to set PATH: %s.", strerror(errno));
+
+
+	/*
+	 * Change working directory
+	 * ------------------------
+	 */
+
+	// Needed for `path_max` to be accurate.
+	if (chdir("/") != 0)
+		ERR_UNAVAILABLE("chdir /: %s", strerror(errno));
 
 
 	/*
@@ -1122,15 +1155,15 @@ int main (void) {
 	#endif
 
 	#ifdef SCRIPT_SUFFIX
-		if (STREQ(SCRIPT_SUFFIX, ""))
-			ERR_USAGE("SCRIPT_SUFFIX: is the empty string.");
+		ASS_USAGE(STRNE(SCRIPT_SUFFIX, ""),
+		          "SCRIPT_SUFFIX: is the empty string.");
 	#else
 		ERR_CONFIG("SCRIPT_SUFFIX: not defined.")
 	#endif
 
 	#ifdef SECURE_PATH
-		if (strlen(SECURE_PATH) > CR_SECURE_PATH_MAX)
-			ERR_USAGE("SECURE_PATH: is too long.");
+		ASS_USAGE(strlen(SECURE_PATH) >= CR_SECURE_PATH_MAX,
+		          "SECURE_PATH: is too long.");
 	#else
 		ERR_CONFIG("SECURE_PATH: not defined.")
 	#endif
@@ -1176,22 +1209,21 @@ int main (void) {
 	// to begin with, of course. Their purpose is to force the user
 	// to secure their setup.
 
-	#ifdef CR_PROFCS
-		is_excl_owner_f(0, 0, prog_path, NULL);
+	is_excl_owner_f(0, 0, prog_path, NULL);
 
-		struct stat prog_fs;
-		if (stat(prog_path, &prog_fs) != 0)
-			ERR_UNAVAILABLE("%s: %s.", prog_path, strerror(errno));
+	struct stat prog_fs;
+	if (stat(prog_path, &prog_fs) != 0)
+		ERR_UNAVAILABLE("%s: %s.", prog_path, strerror(errno));
 
-		if (prog_fs.st_uid != 0)
-			ERR_UNAVAILABLE("%s: UID not 0.", prog_path);
-		if (prog_fs.st_gid != www_gid)
-			ERR_UNAVAILABLE("%s: GID not %d.", prog_path, www_gid);
-		if (prog_fs.st_mode & S_IWOTH)
-			ERR_UNAVAILABLE("%s: is world-writable.", prog_path);
-		if (prog_fs.st_mode & S_IXOTH)
-			ERR_UNAVAILABLE("%s: is world-executable.", prog_path);
-	#endif
+	if (prog_fs.st_uid != 0)
+		ERR_UNAVAILABLE("%s: UID not 0.", prog_path);
+	if (prog_fs.st_gid != www_gid)
+		ERR_UNAVAILABLE("%s: GID not %d.", prog_path, www_gid);
+	if (prog_fs.st_mode & S_IWOTH)
+		ERR_UNAVAILABLE("%s: is world-writable.", prog_path);
+	if (prog_fs.st_mode & S_IXOTH)
+		ERR_UNAVAILABLE("%s: is world-executable.", prog_path);
+
 
 
 	/*
@@ -1201,10 +1233,8 @@ int main (void) {
 
 	char *path_translated = NULL;
 	path_translated = getenv("PATH_TRANSLATED");
-	if (path_translated == NULL)
-		ERR_USAGE("PATH_TRANSLATED: not set.");
-	if (STREQ(path_translated, ""))
-		ERR_USAGE("PATH_TRANSLATED: is empty.");
+	ASS_USAGE(path_translated != NULL, "PATH_TRANSLATED: not set.");
+	ASS_USAGE(STRNE(path_translated, ""), "PATH_TRANSLATED: is empty.");
 	
 	char *restrict script_path = realpath_f(path_translated);
 	if (STRNE(path_translated, script_path))
@@ -1253,8 +1283,9 @@ int main (void) {
 		ERR_UNAVAILABLE("%s: GID %d: not %s's primary group.",
 		                script_path, script_fs.st_gid, pwd->pw_name);
 
-	pwd = NULL;
-	grp = NULL;
+	// pwd and grp are not cleared because
+	// we might need them for initgroups()
+	// when dropping privileges. 
 
 
 	/*
@@ -1262,24 +1293,30 @@ int main (void) {
 	 * ---------------
 	 */
 
-	// This section uses setgroups(), which is non-POSIX.
+	// This section uses setgroups() or initgroups(),
+	// neither of which is part of POSIX.
 
-	#if !defined(NO_SETGROUPS)
+	#ifdef NO_SETGROUPS
+		if (initgroups(pwd->pw_name, script_fs.st_gid) != 0)
+			ERR_OSERR("initgroups %s %d: %s",
+			          pwd->pw_name, script_fs.st_gid,
+	 		          strerror(errno));
+	#else
 		const gid_t groups[] = {};
 		if (setgroups(0, groups) != 0)
-			ERR_UNAVAILABLE("setgroups: %s.",
-			                strerror(errno));
+			ERR_OSERR("setgroups 0: %s.", strerror(errno));
 	#endif
 
 	if (setgid(script_fs.st_gid) != 0)
-		ERR_UNAVAILABLE("setgid %d: %s.",
-		                script_fs.st_gid, strerror(errno));
+		ERR_OSERR("setgid %d: %s.", script_fs.st_gid, strerror(errno));
 	if (setuid(script_fs.st_uid) != 0)
-		ERR_UNAVAILABLE("setuid %s: %s.",
-		                script_fs.st_uid, strerror(errno));
+		ERR_OSERR("setuid %s: %s.", script_fs.st_uid, strerror(errno));
 	if (setuid(0) != -1)
-		ERR_UNAVAILABLE("setuid 0: %s.",
-		                strerror(errno));
+		ERR_OSERR("setuid 0: %s.", strerror(errno));
+
+	// Deferred from the previous section.
+	pwd = NULL;
+	grp = NULL;
 
 
 	/*
@@ -1313,9 +1350,9 @@ int main (void) {
 	char *document_root = NULL;
 	document_root = getenv("DOCUMENT_ROOT");
 	if (document_root == NULL)
-		ERR_USAGE("DOCUMENT_ROOT: not set.");
+		ERR_UNAVAILABLE("DOCUMENT_ROOT: not set.");
 	if (STREQ(document_root, ""))
-		ERR_USAGE("DOCUMENT_ROOT: is empty.");
+		ERR_UNAVAILABLE("DOCUMENT_ROOT: is empty.");
 
 	char *restrict canonical_document_root = realpath_f(document_root);
 	if (STRNE(document_root, canonical_document_root))
@@ -1345,12 +1382,12 @@ int main (void) {
 	 */
 
 	char *suffix = strrchr(script_path, '.');
-	if (!suffix)
-		ERR_USAGE("%s: has no filename ending.",
-		          script_path);
-	if (STRNE(suffix, SCRIPT_SUFFIX))
-		ERR_USAGE("%s: does not end with \"%s\".",
-		          script_path, SCRIPT_SUFFIX);
+	ASS_USAGE(suffix,
+	          "%s: has no filename ending.",
+	          script_path);
+	ASS_USAGE(STREQ(suffix, SCRIPT_SUFFIX),
+	          "%s: does not end with \"%s\".",
+	          script_path, SCRIPT_SUFFIX);
 
 
 	/*
@@ -1358,8 +1395,8 @@ int main (void) {
 	 * ----------------
 	 */
 
-	char *const argv[] = { CGI_HANDLER, NULL };
-	execve(CGI_HANDLER, argv, environ);
+	char *const args[] = { CGI_HANDLER, NULL };
+	execve(CGI_HANDLER, args, environ);
 
 	ERR_OSERR("execve %s: %s.", CGI_HANDLER, strerror(errno));
 }

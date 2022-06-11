@@ -33,16 +33,19 @@ See **SECURITY** in the [manual](MANUAL.rst) for details.
 ## Requirements
 
 **cgi-runas** requires an operating system that complies with
-[POSIX.1-2018](https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/).
-
-Ideally, your system supports the
+[POSIX.1-2018](https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/)
+and supports either the
 [setgroups](https://man7.org/linux/man-pages/man2/setgroups.2.html)
-and the
+or the
+[initgroups](https://man7.org/linux/man-pages/man3/initgroups.3.html)
+system call.
+
+Ideally, your system also supports the
 [clearenv](https://man7.org/linux/man-pages/man3/clearenv.3.html)
-system calls and has a
+system call and has a
 [proc](https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html)
 filesystem mounted on */proc*.
-Linux-based operating systems should meet those requirements.
+Linux-based systems should meet those requirements.
 
 
 ## Installation 
@@ -94,19 +97,19 @@ Once you are done, compile **cgi-runas** by:
 make
 ```
 
-If your operating system does not support **clearenv**, **setgroups**,
-or the proc filesystem, you can disable them using these flags:
+If your operating system does not support **clearenv** or **setgroups**
+you can disable them using these flags:
 
-| Flag         | Description                                |
-| ------------ | ------------------------------------------ |
-| NO_CLEARENV  | Clear the environment by `environ = NULL`. |
-| NO_PROCFS    | Don't use */proc*.                         |
-| NO_SETGROUPS | Don't call **setgroups**.                  |
+| Flag          | Description                                  |
+| ------------- | -------------------------------------------- |
+| NO_CLEARENV   | Clear the environment by `environ = NULL`.   |
+| NO_SETGROUPS  | Use **initgroups** instead of **setgroups**. |
+
 
 For example:
 
 ```sh
-make CFLAGS="-DNO_PROCFS -DNO_CLEARENV"
+make CFLAGS="-DNO_CLEARENV -DNO_SETGROUPS"
 ```
 
 There should now be an executable **cgi-runas** in
