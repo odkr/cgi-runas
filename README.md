@@ -1,3 +1,4 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/4a2d60d9902a4a2ea7e301a410665426)](https://www.codacy.com/gh/odkr/cgi-runas/dashboard)
 [![Language grade: C](https://img.shields.io/lgtm/grade/cpp/github/odkr/cgi-runas.svg)](https://lgtm.com/projects/g/odkr/cgi-runas)
 [![Build](https://ci.appveyor.com/api/projects/status/3besl1g6c66llwax/branch/main?svg=true)](https://ci.appveyor.com/project/odkr/cgi-runas/branch/main)
 
@@ -17,7 +18,6 @@ CGI handler](https://www.php.net/manual/en/install.unix.commandline.php).
 
 See the [manual](MANUAL.rst) for details.
 
-
 ## Security
 
 **cgi-runas** *aims* to achieve security by being correct, following
@@ -28,7 +28,6 @@ However, it has *neither* been thoroughly tested *nor* audited and
 has seen little real-world usage.
 
 See **SECURITY** in the [manual](MANUAL.rst) for details.
-
 
 ## Requirements
 
@@ -46,7 +45,6 @@ system call and has a
 [proc](https://tldp.org/LDP/Linux-Filesystem-Hierarchy/html/proc.html)
 filesystem mounted on */proc*.
 Linux-based systems should meet those requirements.
-
 
 ## Installation 
 
@@ -120,9 +118,7 @@ $ ls cgi-runas
 cgi-runas
 ```
 
-
 ----
-
 
 Change **cgi-runas**'s owner and permissions by:
 
@@ -133,7 +129,6 @@ chmod u=rws,g=x,o= cgi-runas
 
 If your web server does not run under the group 'www-data',
 you need to adapt the command above accordingly.
-
 
 ----
 
@@ -166,18 +161,15 @@ If your **SCRIPT_BASE_DIR** is not */home*, you need to adapt the command
 above accordingly. Note that **php-runas** is the name we have given
 **cgi-runas** above.
 
-
 ## Documentation
 
 See the [manual](MANUAL.rst), the [source code](cgi-runas.c), and
 the [configuration file](config.h) for more details.
 
-
 ## Contact
 
 If there's something wrong with **cgi-runas**, please
 [open an issue](https://github.com/odkr/cgi-runas/issues).
-
 
 ## License
 
