@@ -235,8 +235,8 @@ Transition checks:
 CGI
 ---
 
-You should also consider the `security issues that running PHP as a CGI
-handler <https://www.php.net/manual/en/security.cgi-bin.php>`_ implies.
+You should also consider the `security issues that come with running PHP
+as a CGI handler <https://www.php.net/manual/en/security.cgi-bin.php>`_.
 
 
 DIAGNOSTICS
